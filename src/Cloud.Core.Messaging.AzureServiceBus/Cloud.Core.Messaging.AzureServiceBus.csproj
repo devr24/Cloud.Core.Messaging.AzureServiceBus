@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Company>Robert McCabe</Company>
+    <Version>1.0</Version>
+    <Authors>Robert McCabe</Authors>
+    <Copyright>Robert McCabe</Copyright>
+    <Description>An Azure specific implementation of the IMessenger and IReactiveMessenger which connects to ServiceBus.</Description>
+    <PackageTags>Messaging Messenger ServiceBus Queue Topic Cloud.Core .net-Core Core aspnetcore</PackageTags>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Cloud.Core" Version="1.0.2437.2" />
+    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.19.0" />
+    <PackageReference Include="Microsoft.Azure.ServiceBus" Version="3.3.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="3.19.8" />
+    <PackageReference Include="System.Reactive.Core" Version="4.1.2" />
+    <PackageReference Include="System.Reactive.Linq" Version="4.1.2" />
+  </ItemGroup>
+
+</Project>

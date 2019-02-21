@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2047
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cloud.Core.Messaging.AzureServiceBus", "Cloud.Core.Messaging.AzureServiceBus\Cloud.Core.Messaging.AzureServiceBus.csproj", "{55DE54EB-1B96-49EF-BB97-096A4699A28C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cloud.Core.Messaging.AzureServiceBus.Tests", "Tests\Cloud.Core.Messaging.AzureServiceBus.Tests.csproj", "{3C9EF708-0631-42F6-A92A-E15F27718A13}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{55DE54EB-1B96-49EF-BB97-096A4699A28C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55DE54EB-1B96-49EF-BB97-096A4699A28C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55DE54EB-1B96-49EF-BB97-096A4699A28C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55DE54EB-1B96-49EF-BB97-096A4699A28C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C9EF708-0631-42F6-A92A-E15F27718A13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C9EF708-0631-42F6-A92A-E15F27718A13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C9EF708-0631-42F6-A92A-E15F27718A13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C9EF708-0631-42F6-A92A-E15F27718A13}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {78F2532F-4719-496D-9BE6-7F06905D744A}
+	EndGlobalSection
+EndGlobal
