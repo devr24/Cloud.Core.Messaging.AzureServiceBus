@@ -234,6 +234,13 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             var messageEntity = (MessageEntity<string>)test;
             messageEntity.Body.Should().BeEquivalentTo(test);
         }
+
+        [Fact]
+        public void Test_SenderInfo_Validate()
+        {
+            var sender = new SenderInfo();
+            Assert.Throws<ArgumentException>(() => sender.Validate());
+        }
     }
 
     public class ConfigTest : ConfigBase
