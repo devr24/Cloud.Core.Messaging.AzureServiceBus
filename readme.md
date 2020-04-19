@@ -442,7 +442,7 @@ the AzureServiceBus client and passing in the configuration, make sure to set th
 This property has been retrospectively added for backwards support with existing Topics and messages.
 
 ### Topic Setup - Don't enable partitioning
-All of Automated-Intelligenc's topic's are preimum and should have "EnablePartitioning" set to false.  This can only be set when the topic is being created
+Preimum and should have "EnablePartitioning" set to false.  This can only be set when the topic is being created
 so make sure that is the case when the infrastructure deployment scripts are being setup.
 
 
