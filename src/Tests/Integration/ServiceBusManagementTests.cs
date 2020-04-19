@@ -139,6 +139,8 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             // Quick test to verify "IsPremium" property (could be it's own test...).
             var entityInfo = manager.GetEntity(tableName).GetAwaiter().GetResult();
             entityInfo.IsPremium.Should().BeFalse();
+            entityInfo.MaxEntitySizeMb.Should().BeGreaterThan(0);
+            entityInfo.MaxMessageSizeBytes.Should().BeGreaterThan(0);
 
             var topicMessenger = GetTopicMessenger(tableName, "testSub");
 
