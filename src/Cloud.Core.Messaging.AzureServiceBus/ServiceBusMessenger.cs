@@ -1,29 +1,31 @@
 ﻿namespace Cloud.Core.Messaging.AzureServiceBus
 {
-    using Core;
-    using JetBrains.Annotations;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
     using System.Reactive;
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
+    using System.Threading;
     using System.Threading.Tasks;
-    using System.Collections.Concurrent;
-    using System.Linq;
+    using Config;
+    using Core;
     using Microsoft.Azure.Management.Fluent;
     using Microsoft.Azure.Management.ResourceManager.Fluent;
     using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
     using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
+    using Microsoft.Azure.Services.AppAuthentication;
     using Microsoft.Extensions.Logging;
     using Microsoft.IdentityModel.Clients.ActiveDirectory;
     using Microsoft.Rest;
     using Microsoft.Rest.TransientFaultHandling;
-    using Microsoft.Azure.Services.AppAuthentication;
-    using Config;
-    using Microsoft.Azure.Management.ServiceBus.Fluent.Models;
 
     /// <summary>
     /// ServiceBus specific implementation of IMessenger and IReactiveMessenger.
+    /// Implements the <see cref="IMessenger" />
+    /// Implements the <see cref="IReactiveMessenger" />
     /// </summary>
     /// <seealso cref="IMessenger" />
     /// <seealso cref="IReactiveMessenger" />
@@ -32,76 +34,165 @@
         internal readonly object CancelGate = new object();
         internal readonly object SetupGate = new object();
         internal readonly object ReceiveGate = new object();
-        
         internal readonly ILogger Logger;
-
         internal readonly ISubject<object> MessagesIn = new Subject<object>();
         internal ConcurrentDictionary<Type, IDisposable> MessageSubs = new ConcurrentDictionary<Type, IDisposable>();
         internal ConcurrentDictionary<Type, ServiceBusConnector> QueueConnectors = new ConcurrentDictionary<Type, ServiceBusConnector>();
-        
+        internal static readonly ConcurrentDictionary<string, string> ConnectionStrings = new ConcurrentDictionary<string, string>();
+
         private readonly MsiConfig _msiConfig;
         private readonly ServicePrincipleConfig _spConfig;
-        private ServiceBusConfig _config;
+        private readonly ConnectionConfig _connConfig;
 
-        public ServiceBusConfig ConnectionConfig
+        private ServiceBusManager _sbInfo;
+        internal bool Disposed;
+
+        /// <summary>Name of the object instance.</summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Gets the connection configuration.
+        /// </summary>
+        /// <value>The connection configuration.</value>
+        internal ServiceBusManager ConnectionManager
         {
-            get {
-                if (_config == null)
+            get
+            {
+                // Initialise once.
+                if (_sbInfo == null)
                 {
-                    BuildSbConnection().GetAwaiter().GetResult();
+                    string connectionString;
+                    ConfigBase config;
+
+                    // Get the service bus connection string (either directly from Connection Config OR build using Msi/Service Principle Config).
+                    if (_connConfig != null)
+                    {
+                        // Connection string and config comes direction from ConnConfig object.
+                        config = _connConfig;
+                        connectionString = _connConfig.ConnectionString;
+                    }
+                    else
+                    {
+                        // Otherwise config comes from either Msi/Mui OR Service Principle configs.  Connection string will be built on the fly.  
+                        config = (ConfigBase)_msiConfig ?? _spConfig;
+                        connectionString = BuildSbConnectionString().GetAwaiter().GetResult();
+                    }
+
+                    // Class to represent the built configurations.
+                    _sbInfo = new ServiceBusManager(connectionString, config);
+
+                    // Needs told to initialise to go get additional info.
+                    _sbInfo.Initialise().GetAwaiter().GetResult();
                 }
 
-                return _config;
+                return _sbInfo;
             }
         }
 
-        /// <summary>Initializes a new instance of ServiceBusMessenger with Managed Service Identity (MSI) authentication.</summary>
+        /// <summary>
+        /// Property representing IManager interface method.
+        /// </summary>
+        public IMessageEntityManager EntityManager => ConnectionManager;
+
+        /// <summary>
+        /// Initializes a new instance of ServiceBusMessenger with Managed Service Identity (MSI) authentication.
+        /// </summary>
         /// <param name="config">The Msi ServiceBus configuration.</param>
         /// <param name="logger">The logger.</param>
         public ServiceBusMessenger([NotNull]MsiConfig config, ILogger logger = null)
         {
             // Ensure all required configuration is as expected.
             config.Validate();
+            Name = config.InstanceName;
 
             Logger = logger;
             _msiConfig = config;
         }
 
-        /// <summary>Initializes a new instance of ServiceBusMessenger with Service Principle authentication.</summary>
+        /// <summary>
+        /// Initializes a new instance of ServiceBusMessenger with Service Principle authentication.
+        /// </summary>
         /// <param name="config">The Service Principle configuration.</param>
         /// <param name="logger">The logger.</param>
         public ServiceBusMessenger([NotNull]ServicePrincipleConfig config, ILogger logger = null)
         {
             // Ensure all required configuration is as expected.
             config.Validate();
+            Name = config.InstanceName;
 
             Logger = logger;
             _spConfig = config;
         }
 
-        /// <summary>Initializes a new instance of the ServiceBusMessenger using a connection string.</summary>
+        /// <summary>
+        /// Initializes a new instance of the ServiceBusMessenger using a connection string.
+        /// </summary>
         /// <param name="config">The connection string configuration.</param>
         /// <param name="logger">The logger.</param>
-        public ServiceBusMessenger([NotNull]ConnectionConfig config, ILogger<IReactiveMessenger> logger = null)
+        public ServiceBusMessenger([NotNull]ConnectionConfig config, ILogger logger = null)
         {
             // Ensure all required configuration is as expected.
             config.Validate();
+            Name = config.InstanceName;
 
             Logger = logger;
-            _config = config;
+            _connConfig = config;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Sends message to the service bus
+        /// </summary>
+        /// <typeparam name="T">Type of object on the entity.</typeparam>
+        /// <param name="message">The message body to be sent.</param>
+        /// <returns>Task.</returns>
         public async Task Send<T>(T message) where T : class
         {
-            await SendBatch(new List<T> {message});
+            await Send(message, null);
         }
 
-        /// <summary>Send a batch of messages to Service Bus.</summary>
+        /// <summary>
+        /// Sends a message to Service Bus with properties.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message">The message body to be sent.</param>
+        /// <param name="properties">The properties of the message.</param>
+        /// <returns>Task.</returns>
+        public async Task Send<T>(T message, KeyValuePair<string, object>[] properties) where T : class
+        {
+            if (!QueueConnectors.ContainsKey((typeof(T))))
+            {
+                SetupConnectorType<T>();
+            }
+
+            var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
+            await queue.SendMessage(message, properties);
+        }
+
+        /// <summary>
+        /// Send a batch of messages to Service Bus.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <param name="messages">List of messages to send.</param>
         /// <param name="batchSize">Size of message batches to send in a single call. If set to zero, uses the default batch size from config.</param>
-        /// <inheritdoc />
-        public async Task SendBatch<T>(IList<T> messages, int batchSize = 0) where T : class
+        /// <returns>Task.</returns>
+        public async Task SendBatch<T>(IEnumerable<T> messages, int batchSize = 100) where T : class
+        {
+            KeyValuePair<string, object>[] placeholder = null;
+
+            // Send the batch of messages with NO properties specified.
+            // ReSharper disable once ExpressionIsAlwaysNull
+            await SendBatch(messages, placeholder, batchSize);
+        }
+
+        /// <summary>
+        /// Sends a message to Service Bus with properties.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="messages">List of messages to send</param>
+        /// <param name="properties">The properties applied to all messages</param>
+        /// <param name="batchSize">Size of message batches to send in a single call. If set to zero, uses the default batch size from config.</param>
+        /// <returns>Task.</returns>
+        public async Task SendBatch<T>(IEnumerable<T> messages, KeyValuePair<string, object>[] properties, int batchSize = 100) where T : class
         {
             // Setup the queue adapter if it doesn't exist.
             if (!QueueConnectors.ContainsKey(typeof(T)))
@@ -111,18 +202,41 @@
 
             var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
 
-            if (batchSize != 0)
-                queue.Config.BatchSize = batchSize;
-
-            // Send messages as a batch.
-            await queue.SendBatch(messages);
+            // Send messages as a batch with defined list of properties for all messages.
+            await queue.SendBatch(messages, batchSize, properties);
         }
 
+        /// <summary>
+        /// Send a batch of messages all with a set list of properties.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="messages">List of messages to send</param>
+        /// <param name="setProps">Function for setting properties for each message.</param>
+        /// <param name="batchSize">Size of message batches to send in a single call. If set to zero, uses the default batch size from config.</param>
+        /// <returns>Task.</returns>
+        public async Task SendBatch<T>(IEnumerable<T> messages, Func<T, KeyValuePair<string, object>[]> setProps, int batchSize = 100) where T : class
+        {
+            // Setup the queue adapter if it doesn't exist.
+            if (!QueueConnectors.ContainsKey(typeof(T)))
+            {
+                SetupConnectorType<T>();
+            }
+
+            var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
+
+            // Send messages as a batch, with a function to set the message properties.
+            await queue.SendBatch(messages, batchSize, null, setProps);
+        }
+
+        /// <summary>
+        /// Receives the specified success callback.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <param name="successCallback">Callback to execute after a message batch has been received.</param>
         /// <param name="errorCallback">Callback to execute after an error occurs.</param>
         /// <param name="batchSize">Size of message batches to receive in a single call. If set to zero, uses the default batch size from config.</param>
-        /// <inheritdoc />
-        public void Receive<T>(Action<T> successCallback, Action<Exception> errorCallback, int batchSize = 0) where T : class
+        /// <exception cref="InvalidOperationException">Callback for this message type already configured. Only one callback per type is supported.</exception>
+        public void Receive<T>(Action<T> successCallback, Action<Exception> errorCallback, int batchSize = 10) where T : class
         {
             System.Threading.Monitor.Enter(ReceiveGate);
 
@@ -131,14 +245,11 @@
                 // If the subscription (callback) has already been setup for this type, then throw an error.
                 if (MessageSubs.ContainsKey(typeof(T)))
                     throw new InvalidOperationException("Callback for this message type already configured. Only one callback per type is supported.");
-                
+
                 var queue = SetupConnectorType<T>();
 
-                if (batchSize != 0)
-                    queue.Config.BatchSize = batchSize;
-
                 // Start ready for this type.
-                queue.StartReading();
+                queue.StartReading(batchSize);
 
                 // Add to callback subscription list.
                 MessageSubs.TryAdd(typeof(T), MessagesIn.OfType<T>().Subscribe(successCallback, errorCallback));
@@ -150,59 +261,87 @@
         }
 
         /// <summary>
-        /// Read a single message.
-        /// </summary>
-        /// <typeparam name="T">Type of object on the entity.</typeparam>
-        public IMessageItem<T> ReceiveOne<T>() where T : class
-        {
-            // If no subscriptions exist for this message, setup the new read.
-            if (!MessageSubs.TryGetValue(typeof(T), out var queue))
-            {
-                queue = SetupConnectorType<T>();
-            }
-
-            // Start ready for this type.
-            return ((ServiceBusConnector<T>)queue).ReadOne().ConfigureAwait(false).GetAwaiter().GetResult();
-
-        }
-
-        /// <summary>
-        /// Get the total number of messages that exist on the receiver entity.
-        /// </summary>
-        /// <typeparam name="T">Type of object on the entity.</typeparam>
-        /// <returns>Awaitable task of total number of messages on entity.</returns>
-        public async Task<long> GetReceiverMessageCount<T>() where T : class
-        {
-            // If no subscriptions exist for this message, setup the new read.
-            if (!MessageSubs.TryGetValue(typeof(T), out var queue))
-            {
-                queue = SetupConnectorType<T>();
-            }
-
-            return await ((ServiceBusConnector<T>) queue).GetReceiverMessageCount().ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Starts the receive.
+        /// Starts to receive messages as an observable.
         /// </summary>
         /// <typeparam name="T">Type of object to receive</typeparam>
         /// <param name="batchSize">Size of message batches to receive in a single call. If set to zero, uses the default batch size from config.</param>
         /// <returns>IObservable{T}.</returns>
-        public IObservable<T> StartReceive<T>(int batchSize = 0) where T : class
+        public IObservable<T> StartReceive<T>(int batchSize = 10) where T : class
         {
             // If no subscriptions exist for this message, setup the new read.
             if (!MessageSubs.ContainsKey(typeof(T)))
             {
                 var queue = SetupConnectorType<T>();
-
-                if (batchSize != 0)
-                    queue.Config.BatchSize = batchSize;
-
-                queue.StartReading();
+                queue.StartReading(batchSize);
             }
 
             // Return the observable to be subscribed to.
-            return MessagesIn.OfType<T>().AsObservable();
+            return MessagesIn.OfType<T>();
+        }
+
+        /// <summary>
+        /// Read a single message.
+        /// </summary>
+        /// <typeparam name="T">Type of object on the entity.</typeparam>
+        /// <returns>IMessageItem&lt;T&gt;.</returns>
+        public T ReceiveOne<T>() where T : class
+        {
+            return ReceiveOneEntity<T>()?.Body;
+        }
+
+        /// <summary>
+        /// Receives the one entity.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>IMessageEntity&lt;T&gt;.</returns>
+        public IMessageEntity<T> ReceiveOneEntity<T>() where T : class
+        {
+            // Setup the queue adapter if it doesn't exist.
+            if (!QueueConnectors.ContainsKey(typeof(T)))
+            {
+                SetupConnectorType<T>();
+            }
+
+            var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
+
+            // Start ready for this type.
+            return queue.ReadOne().ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Completes all messages on the receiver.
+        /// </summary>
+        public async Task CompleteAllMessages(CancellationTokenSource tokenSource = null) 
+        {
+            // Setup the queue adapter if it doesn't exist.
+            if (!QueueConnectors.ContainsKey(typeof(object)))
+            {
+                SetupConnectorType<object>();
+            }
+
+            var queue = (ServiceBusConnector<object>)QueueConnectors[typeof(object)];
+
+            // Start ready for this type.
+            await queue.CompleteAll(tokenSource);
+        }
+
+        /// <summary>
+        /// Read message properties for the passed message.
+        /// </summary>
+        /// <typeparam name="T">Type of message body.</typeparam>
+        /// <param name="msg">Message body, used to identify actual Service Bus message.</param>
+        /// <returns>IDictionary&lt;System.String, System.Object&gt;.</returns>
+        public IDictionary<string, object> ReadProperties<T>(T msg) where T : class
+        {
+            if (!QueueConnectors.ContainsKey(typeof(T)))
+            {
+                SetupConnectorType<T>();
+            }
+
+            var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
+
+            // Read properties.
+            return queue.ReadProperties(msg);
         }
 
         /// <summary>
@@ -210,6 +349,7 @@
         /// </summary>
         /// <typeparam name="T">Type of adapter.</typeparam>
         /// <returns>Message queue for the type T.</returns>
+        /// <exception cref="InvalidOperationException">Messages of type {typeof(T).FullName}</exception>
         /// <exception cref="InvalidOperationException"></exception>
         internal ServiceBusConnector<T> GetQueueAdapterIfExists<T>() where T : class
         {
@@ -240,32 +380,74 @@
                 QueueConnectors.TryRemove(typeof(T), out var connector);
                 connector?.Dispose();
             }
+            catch
+            {
+                // do nothing here...
+            }
             finally
             {
                 System.Threading.Monitor.Exit(CancelGate);
             }
         }
-        
-        /// <inheritdoc />
+
+        /// <summary>
+        /// Completes the specified message.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message">The message.</param>
+        /// <returns>Task.</returns>
         public async Task Complete<T>(T message) where T : class
         {
             await GetQueueAdapterIfExists<T>().Complete(message).ConfigureAwait(false);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Completes multiple messages message.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="messages">The list of messages.</param>
+        /// <returns>Task.</returns>
+        public async Task CompleteAll<T>(IEnumerable<T> messages) where T : class
+        {
+            await GetQueueAdapterIfExists<T>().Complete(messages).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Abandons the specified message.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message">The message.</param>
+        /// <returns>Task.</returns>
         public async Task Abandon<T>(T message) where T : class
         {
             await GetQueueAdapterIfExists<T>().Abandon(message).ConfigureAwait(false);
         }
 
-        /// <inheritdoc />
-        public async Task Error<T>(T message) where T : class
+        /// <summary>
+        /// Errors the specified message.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message">The message.</param>
+        /// <param name="reason">The reason.</param>
+        /// <returns>Task.</returns>
+        public async Task Error<T>(T message, string reason = null) where T : class
         {
-            await GetQueueAdapterIfExists<T>().Error(message).ConfigureAwait(false);
+            await GetQueueAdapterIfExists<T>().Error(message, reason).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Sets the messenger up for sending / receiving a specific message of type <typeparamref name="T"/>.
+        /// Interface method to allow retrieval of SignedAccessUrls for supported Message Providers.
+        /// ServiceBus is not currently a supported Message Provider so it will error with "Not Implemented" if it is used.
+        /// </summary>
+        /// <param name="accessConfig"></param>
+        /// <returns></returns>
+        public string GetSignedAccessUrl(ISignedAccessConfig accessConfig)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Sets the messenger up for sending / receiving a specific message of type <typeparamref name="T" />.
         /// </summary>
         /// <typeparam name="T">The type of the message we are setting up.</typeparam>
         /// <returns>The message queue adapter.</returns>
@@ -278,11 +460,11 @@
                 // If no adapter for this type already exists, then create an instance.
                 if (!QueueConnectors.ContainsKey(typeof(T)))
                 {
-                    var queue = new ServiceBusConnector<T>(ConnectionConfig, MessagesIn.AsObserver(), Logger);
+                    var queue = new ServiceBusConnector<T>(ConnectionManager, MessagesIn.AsObserver(), Logger);
                     QueueConnectors.TryAdd(typeof(T), queue);
                 }
 
-                return (ServiceBusConnector<T>) QueueConnectors[typeof(T)];
+                return (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
             }
             finally
             {
@@ -290,31 +472,70 @@
             }
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
-            // Clear all message subscriptions.
-            MessageSubs.Release();
-            MessageSubs = null;
+            // Dispose of unmanaged resources.
+            Dispose(true);
 
-            // Clear all adapters.
-            QueueConnectors.Release();
-            QueueConnectors = null;
+            // Suppress finalization.
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources.
+        /// </summary>
+        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (Disposed)
+                return;
+
+            if (disposing)
+            {
+                // Clear all message subscriptions.
+                MessageSubs.Release();
+                MessageSubs = null;
+
+                // Clear all adapters.
+                QueueConnectors.Release();
+                QueueConnectors = null;
+            }
+
+            Disposed = true;
         }
 
         /// <summary>
         /// Builds the sb connection.
         /// </summary>
-        /// <returns><see cref="ConnectionConfig"/> generated.</returns>
-        internal async Task BuildSbConnection()
+        /// <returns><see cref="ConnectionManager" /> generated.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Could not authenticate using Managed Service Identity, ensure the application is running in a secure context
+        /// or
+        /// Could not authenticate to {azureManagementAuthority} using supplied AppId: {_spConfig.AppId}
+        /// or
+        /// Could not find the a service bus instance in the subscription with ID {subscriptionId}
+        /// </exception>
+        /// <exception cref="ArgumentException">An exception occurred during service connection, see inner exception for more detail</exception>
+        [ExcludeFromCodeCoverage]
+        internal async Task<string> BuildSbConnectionString()
         {
             try
             {
-                string token, subscriptionName, instanceName, sharedAccessPolicy;
-                bool isServiceLevelSap, isTopic;
+                var instanceName = (_msiConfig != null) ? _msiConfig.InstanceName : _spConfig.InstanceName;
+
+                // If we already have the connection string for this instance - don't go get it again.
+                if (ConnectionStrings.TryGetValue(instanceName, out var connStr))
+                {
+                    return connStr;
+                }
 
                 const string azureManagementAuthority = "https://management.azure.com/";
                 const string windowsLoginAuthority = "https://login.windows.net/";
+
+                string token, subscriptionId, sharedAccessPolicy;
 
                 // Generate authentication token using Msi Config if it's been specified, otherwise, use Service principle.
                 if (_msiConfig != null)
@@ -325,38 +546,32 @@
 
                     if (string.IsNullOrEmpty(token))
                         throw new InvalidOperationException("Could not authenticate using Managed Service Identity, ensure the application is running in a secure context");
-                    
-                    _config = _msiConfig;
-                    subscriptionName = _msiConfig.SubscriptionId;
+
+                    subscriptionId = _msiConfig.SubscriptionId;
                     instanceName = _msiConfig.InstanceName;
-                    sharedAccessPolicy = _msiConfig.SharedAccessPolicy;
-                    isServiceLevelSap = _msiConfig.IsServiceLevelSharedAccessPolicy;
-                    isTopic = _msiConfig.IsTopic;
+                    sharedAccessPolicy = _msiConfig.SharedAccessPolicyName;
                 }
                 else
-                { 
+                {
                     // Grab an authentication token from Azure.
                     var context = new AuthenticationContext(windowsLoginAuthority + _spConfig.TenantId);
 
                     var credential = new ClientCredential(_spConfig.AppId, _spConfig.AppSecret);
                     var tokenResult = await context.AcquireTokenAsync(azureManagementAuthority, credential);
-                    
+
                     if (tokenResult == null)
                         throw new InvalidOperationException($"Could not authenticate to {azureManagementAuthority} using supplied AppId: {_spConfig.AppId}");
 
                     token = tokenResult.AccessToken;
 
-                    _config = _spConfig;
-                    subscriptionName = _spConfig.SubscriptionId;
+                    subscriptionId = _spConfig.SubscriptionId;
                     instanceName = _spConfig.InstanceName;
-                    sharedAccessPolicy = _spConfig.SharedAccessPolicy;
-                    isServiceLevelSap = _spConfig.IsServiceLevelSharedAccessPolicy;
-                    isTopic = _spConfig.IsTopic;
+                    sharedAccessPolicy = _spConfig.SharedAccessPolicyName;
                 }
 
                 // Set credentials and grab the authenticated REST client.
                 var tokenCredentials = new TokenCredentials(token);
-                
+
                 var client = RestClient.Configure()
                     .WithEnvironment(AzureEnvironment.AzureGlobalCloud)
                     .WithLogLevel(HttpLoggingDelegatingHandler.Level.None)
@@ -365,45 +580,65 @@
                     .Build();
 
                 // Authenticate against the management layer.
-                var azureManagement = Azure.Authenticate(client, string.Empty).WithSubscription(subscriptionName);
+                var azureManagement = Azure.Authenticate(client, string.Empty).WithSubscription(subscriptionId);
                 var sbNamespace = (await azureManagement.ServiceBusNamespaces.ListAsync()).FirstOrDefault(s => s.Name == instanceName);
 
                 // If the namespace is not found, throw an exception.
                 if (sbNamespace == null)
-                    throw new InvalidOperationException($"Could not find the a service bus instance in the subscription with ID {subscriptionName}");
+                    throw new InvalidOperationException($"Could not find the a service bus instance in the subscription with ID {subscriptionId}");
 
-                // If this is premium tier service bus namespace, limit message send size.
-                if (sbNamespace.Sku.Tier == SkuTier.Premium) 
-                    _config.IsPremiumTier = true;
+                // Get the built connection string.
+                var connectionString = sbNamespace.AuthorizationRules.GetByName(sharedAccessPolicy).GetKeys().PrimaryConnectionString;
 
-                // Build dynamic lock time.
-                _config.LockInSeconds = (isTopic ? 
-                    sbNamespace.Topics.GetByName(_config.ReceiverEntity).Subscriptions.GetByName(_config.ReceiverSubscriptionName).LockDurationInSeconds
-                    : sbNamespace.Queues.GetByName(_config.ReceiverEntity).LockDurationInSeconds);
-
-                // Connection string built up in different ways depending on the shared access policy level. Uses "global" (top service level) when isServiceLevelSAP [true].
-                if (isServiceLevelSap)
-                    _config.Connection = sbNamespace.AuthorizationRules.GetByName(sharedAccessPolicy).GetKeys().PrimaryConnectionString;
-                else
+                // Cache the connection string off so we don't have to reauthenticate.
+                if (!ConnectionStrings.ContainsKey(instanceName))
                 {
-                    // Build dynamic connection string for Topic or queue.
-                    _config.Connection = (isTopic ? 
-                        sbNamespace.Topics.GetByName(_config.ReceiverEntity).AuthorizationRules.GetByName(sharedAccessPolicy).GetKeys().PrimaryConnectionString 
-                        : sbNamespace.Queues.GetByName(_config.ReceiverEntity).AuthorizationRules.GetByName(sharedAccessPolicy).GetKeys().PrimaryConnectionString);
-                    
-                    // Remove the addition "EntityPath" text.
-                    _config.Connection = _config.Connection.Replace($";EntityPath={_config.ReceiverEntity}", string.Empty);
+                    ConnectionStrings.TryAdd(instanceName, connectionString);
                 }
-                
-                Logger?.LogInformation($"Message lock duration:{_config.LockInSeconds} seconds, message lock renewed at: {_config.LockTimeThreshold} seconds");
-                Logger?.LogInformation($"ServiceBus namespace is premium tier: {_config.IsPremiumTier}");
-                Logger?.LogInformation($"Max send message size: {_config.MaxMessageSizeKb}");
+
+                // Return the connection string.
+                return connectionString;
+
+                // NOTE: Re-implement the code in previous version of Master Branch when the intent is to use shared access policies that are topic or queue level.  
+                // When this happens, a connection string may need to be added to both the sender and receiver as a connection string generated using a lower level 
+                // access policy will mean it needs a connection per send/receive.  This is why I have left this out for now (I can see from our solution we do not use 
+                // low level Shared Access Policies at the moment either.
             }
             catch (Exception e)
             {
                 Logger?.LogError(e, "An exception occurred during service bus connection");
-                throw new Exception("An exception occurred during service connection, see inner exception for more detail", e);
+                throw new ArgumentException("An exception occurred during service connection, see inner exception for more detail", e);
             }
+        }
+
+        /// <summary>
+        /// Update the receiver to listen to a topic/subscription
+        /// </summary>
+        /// <param name="entityName">The name of the updated Topic to Listen to.</param>
+        /// <param name="entitySubscriptionName">The name of the updated Subscription on the Topic.</param>
+        /// <param name="createIfNotExists">Creates the entity if it does not exist</param>
+        /// <param name="entityFilter">A filter that will be applied to the entity if created through this method</param>
+        /// <param name="supportStringBodyType">Support reading Service Bus message body as a string</param>
+        /// <returns></returns>
+        public async Task UpdateReceiver(string entityName, string entitySubscriptionName = null, bool createIfNotExists = false, KeyValuePair<string, string>? entityFilter = null, bool supportStringBodyType = false)
+        {
+            var sbEntityManager = EntityManager as ServiceBusManager;
+
+            if (sbEntityManager == null)
+            {
+                throw new InvalidOperationException("Service Bus Messenger Client was not using a ServiceBusManager as it's EntityManager");
+            }
+
+            // Clear all message subscriptions.
+            MessageSubs?.Release();
+
+            // Clear all adapters.
+            QueueConnectors?.Release();
+
+            await ConnectionManager.UpdateReceiver(entityName, entitySubscriptionName, createIfNotExists, entityFilter, supportStringBodyType);
+
+            // Short sleep while the settings are applied.
+            await Task.Delay(5000);
         }
     }
 }

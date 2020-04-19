@@ -2,67 +2,63 @@
 {
     using System;
 
-    public class MsiConfig : ServiceBusConfig
+    /// <summary>
+    /// Managed Service Instance OR Managed User Instance config for connecting to an instance of Service Bus.
+    /// Implements the <see cref="ConfigBase" />
+    /// </summary>
+    /// <seealso cref="ConfigBase" />
+    public class MsiConfig : ConfigBase
     {
         /// <summary>
         /// Gets or sets the tenant identifier.
         /// </summary>
-        /// <value>
-        /// The tenant identifier.
-        /// </value>
+        /// <value>The tenant identifier.</value>
         public string TenantId { get; set; }
 
         /// <summary>
         /// Gets or sets the subscription identifier.
         /// </summary>
-        /// <value>
-        /// The subscription identifier.
-        /// </value>
+        /// <value>The subscription identifier.</value>
         public string SubscriptionId { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the service bus instance.
         /// </summary>
-        /// <value>
-        /// The name of the service bus instance.
-        /// </value>
+        /// <value>The name of the service bus instance.</value>
         public string InstanceName { get; set; }
-        
-        /// <summary>
-        /// Gets or sets the shared access policy.
-        /// </summary>
-        /// <value>
-        /// The shared access policy.
-        /// </value>
-        public string SharedAccessPolicy { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the shared access policy defined is at the top service level or granular at the topic/queue level.
+        /// Gets or sets the shared access policy name.
+        /// NOTE: MUST BE TOP-LEVEL SHARED ACCESS POLICY, NOT TOPIC/QUEUE LEVEL
+        /// (this can be extended later - not used at the moment).
         /// </summary>
-        /// <value><c>true</c> if this instance is service level shared access policy; otherwise, <c>false</c>.</value>
-        public bool IsServiceLevelSharedAccessPolicy { get; set; }
+        /// <value>The shared access policy to use when connecting.</value>
+        public string SharedAccessPolicyName { get; set; } = "RootManageSharedAccessKey";
 
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
-        /// <returns>
-        /// A <see cref="string" /> that represents this instance.
-        /// </returns>
+        /// <returns>A <see cref="string" /> that represents this instance.</returns>
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"TenantId: {TenantId}, SubscriptionId: {SubscriptionId},SharedAccessPolicy: {SharedAccessPolicy}, IsServiceLevelSharedAccessPolicy: {IsServiceLevelSharedAccessPolicy}, " +
-                   $"InstanceName: {InstanceName}, ReceiverEntity: {ReceiverEntity}, ReceiverSubscriptionName: {ReceiverSubscriptionName}, IsTopic: {IsTopic}" +
-                   $", PollFrequency: {PollFrequencyInSeconds},EnableStringBodyTypeSupport: {EnableStringBodyTypeSupport}, MessageVersion: {MessageVersion}";
+            return $"ServiceBusInstance: {InstanceName}, SharedAccessPolicyName: {SharedAccessPolicyName}{base.ToString()}";
         }
 
         /// <summary>
         /// Validates this instance.
         /// </summary>
-        /// <exception cref="ArgumentException">
-        /// InstanceName must be set and AppId must be set and AppId must be set and
-        /// TenantId must be set and SubscriptionId must be set.
+        /// <exception cref="System.ArgumentException">
+        /// InstanceName must be set
+        /// or
+        /// TenantId must be set
+        /// or
+        /// SubscriptionId must be set
+        /// or
+        /// SharedAccessPolicy must be set
         /// </exception>
+        /// <exception cref="ArgumentException">InstanceName must be set and AppId must be set and AppId must be set and
+        /// TenantId must be set and SubscriptionId must be set.</exception>
         /// <inheritdoc />
         public override void Validate()
         {
@@ -75,7 +71,7 @@
             if (SubscriptionId.IsNullOrEmpty())
                 throw new ArgumentException("SubscriptionId must be set");
 
-            if (SharedAccessPolicy.IsNullOrEmpty())
+            if (SharedAccessPolicyName.IsNullOrEmpty())
                 throw new ArgumentException("SharedAccessPolicy must be set");
 
             base.Validate();
