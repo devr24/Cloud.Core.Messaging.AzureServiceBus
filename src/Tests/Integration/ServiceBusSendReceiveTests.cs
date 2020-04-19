@@ -639,8 +639,8 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             var topicOne = GetTopicMessenger("updatereceiverreceiverone", "subone");
             var topicTwo = GetTopicMessenger("updatereceiverreceivertwo", "subtwo");
 
-            ((ServiceBusManager)topicOne.EntityManager).EntityFullPurge("updatereceiverreceiverone1", true).GetAwaiter().GetResult();
-            ((ServiceBusManager)topicTwo.EntityManager).EntityFullPurge("updatereceiverreceivertwo2", true).GetAwaiter().GetResult();
+            ((ServiceBusManager)topicOne.EntityManager).EntityFullPurge("updatereceiverreceiverone", true).GetAwaiter().GetResult();
+            ((ServiceBusManager)topicTwo.EntityManager).EntityFullPurge("updatereceiverreceivertwo", true).GetAwaiter().GetResult();
 
             // Act and Assert
             var testMessageOne = "Message One";
