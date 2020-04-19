@@ -220,11 +220,19 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             var msiConfig = new MsiConfig() { SharedAccessPolicyName = "" };
             var connectionConfig = new ConnectionConfig();
             var spConfig = new ServicePrincipleConfig() { SharedAccessPolicyName = "TestPolicy", InstanceName = "testSBInstance", AppId = "TestAppId", AppSecret = "TestAppSecret", TenantId = "TestTenantId", SubscriptionId = "FakeSubscriptionId" };
-            var setup = new ReceiverSetup();
             var serviceBus = new ServiceBusMessenger(spConfig);
+            serviceBus.ToString().Should().NotBeNullOrEmpty();
             var sharedAccessConfig = new SignedAccessConfig(new List<AccessPermission> { AccessPermission.Read }, DateTimeOffset.UtcNow.AddDays(1));
 
             Assert.Throws<NotImplementedException>(() => serviceBus.GetSignedAccessUrl(sharedAccessConfig));
+        }
+
+        [Fact]
+        public void Test_MessageEntity_Implicit()
+        {
+            var test = "hello";
+            var messageEntity = (MessageEntity<string>)test;
+            messageEntity.Body.Should().BeEquivalentTo(test);
         }
     }
 
