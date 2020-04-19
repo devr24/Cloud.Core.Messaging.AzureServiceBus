@@ -1,6 +1,4 @@
-# **Cloud.Core.Messaging.ServiceBus** 
-[![Build status](https://dev.azure.com/cloudcoreproject/CloudCore/_apis/build/status/Cloud.Core/Cloud.Core.Telemetry.AzureAppInsights_Package)](https://dev.azure.com/cloudcoreproject/CloudCore/_build/latest?definitionId=10) 
-![Code Coverage](https://cloud1core.blob.core.windows.net/codecoveragebadges/Cloud.Core.Messaging.AzureServiceBus-LineCoverage.png) 
+# **Cloud.Core.Messaging.ServiceBus**  [![Build status](https://dev.azure.com/cloudcoreproject/CloudCore/_apis/build/status/Cloud.Core/Cloud.Core.Messenger.AzureServiceBus_Package)](https://dev.azure.com/cloudcoreproject/CloudCore/_build/latest?definitionId=11) ![Code Coverage](https://cloud1core.blob.core.windows.net/codecoveragebadges/Cloud.Core.Messaging.AzureServiceBus-LineCoverage.png) 
 [![Cloud.Core.Telemetry.AzureAppInsights package in Cloud.Core feed in Azure Artifacts](https://feeds.dev.azure.com/cloudcoreproject/dfc5e3d0-a562-46fe-8070-7901ac8e64a0/_apis/public/Packaging/Feeds/8949198b-5c74-42af-9d30-e8c462acada6/Packages/77080b8d-f547-4193-b2a1-6cdfd7eb6719/Badge)](https://dev.azure.com/cloudcoreproject/CloudCore/_packaging?_a=package&feed=8949198b-5c74-42af-9d30-e8c462acada6&package=77080b8d-f547-4193-b2a1-6cdfd7eb6719&preferRelease=true)
 
 

@@ -7,7 +7,7 @@
         <Configuration>
           <Include>[*.Messaging.AzureServiceBus]*</Include>
           <ExcludeByAttribute>ExcludeFromCodeCoverage</ExcludeByAttribute>
-          <ExcludeByFile>../**/Program.cs,../**/Startup.cs,../**/ServiceBusConnector.cs</ExcludeByFile>
+          <ExcludeByFile>../**/Program.cs,../**/Startup.cs</ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>

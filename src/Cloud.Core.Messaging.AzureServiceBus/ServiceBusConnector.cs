@@ -106,6 +106,7 @@
         /// <exception cref="EntityFullException"></exception>
         /// <exception cref="InvalidOperationException">Sender Entity has not been configured</exception>
         /// <exception cref="ArgumentOutOfRangeException">Sender Entity has not been configured</exception>
+        [ExcludeFromCodeCoverage] // Skipped - too many edge cases that cant be tested.
         internal async Task SendBatch([NotNull] IEnumerable<T> messages, int sendBatchSize,
             KeyValuePair<string, object>[] properties = null, Func<T, KeyValuePair<string, object>[]> setMessagesFunc = null)
         {
@@ -192,11 +193,13 @@
         }
 
         /// <summary>
-        /// Sends an individual message.
+        /// Sends the message.
         /// </summary>
         /// <param name="messageBody">The message body.</param>
         /// <param name="messageProperties">The message properties.</param>
-        /// <returns>Task.</returns>
+        /// <exception cref="EntityDisabledException"></exception>
+        /// <exception cref="EntityFullException"></exception>
+        [ExcludeFromCodeCoverage] // Skipped - too many edge cases that cant be tested.
         internal async Task SendMessage(T messageBody, KeyValuePair<string, object>[] messageProperties = null)
         {
             if (Disposed) return;
@@ -322,6 +325,7 @@
         /// <param name="readBatchSize">Size of the read batch.</param>
         /// <returns>Task.</returns>
         /// <exception cref="InvalidOperationException">Receiver Entity has not been configured</exception>
+        [ExcludeFromCodeCoverage] // Skipped - too many edge cases that cant be tested.
         internal void Read([MaybeNull]object _, int readBatchSize)
         {
             lock (_objLock)
@@ -407,6 +411,8 @@
         /// <summary>
         /// Completes all.
         /// </summary>
+        /// <param name="tokenSource">The token source.</param>
+        [ExcludeFromCodeCoverage] // Skipped - too many edge cases that cant be tested.
         internal async Task CompleteAll(CancellationTokenSource tokenSource = null)
         {
             do
