@@ -12,7 +12,7 @@
     <PackageTags>Messaging Messenger ServiceBus Queue Topic Cloud.Core .net-Core Core aspnetcore</PackageTags>
     <SignAssembly>false</SignAssembly>
     <ProjectGuid>{38bfefd3-f861-4f96-9a8b-6e1b2036c7e0}</ProjectGuid>
-	<RepositoryUrl>https://github.com/rmccabe24/Cloud.Core.AppHost</RepositoryUrl>
+	<RepositoryUrl>https://github.com/rmccabe24/Cloud.Core.Messaging.AzureServiceBus</RepositoryUrl>
 	<RepositoryType>Private</RepositoryType>
   </PropertyGroup>
 
