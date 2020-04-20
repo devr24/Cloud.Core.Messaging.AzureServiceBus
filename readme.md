@@ -16,19 +16,12 @@ as an observable collection.  You can read more on the observable pattern here: 
 ## Usage
 
 ### Interface with Core
-The *Cloud.Core* package contains these public interfaces for messaging (chain shown below):
-
-<div style="padding-left:40px">
-
-![Messenger Interfaces](contents/IMessage.png)
+The *Cloud.Core* package contains these public interfaces for messaging (chain shown below)
 
 
 </div>
 
-The main focus of this package being separate from all the other Azure specific packages is to allow for a layer of abstraction in the calling applications.
-The abstraction is shown below:
-
-![Messenger Interfaces](contents/ServiceBus_Abstraction.png)
+The *Cloud.Core* package contains these public interfaces for messaging (chain shown below).  This package implements the releavant interfaces for ServiceBus.  The main focus of this package being separate from all the other Azure specific packages is to allow for a layer of abstraction in the calling applications.
 
 If in the future the calling application was to be run in AWS or Google Cloud, the only thing that would need to be changed in code is the 
 instantiation of IMessage.  Using this package, it would look like this:
@@ -66,7 +59,7 @@ validation, business rules, incorrect data, etc.
 
 The interface has been implemented within this package as follows:
 
-![Messenger Implementation](contents/Implementation.png)
+![Messenger Implementation](contents/ServiceBus_Abstraction.png)
 
 ### Why wrap the ServiceBus API?
 
