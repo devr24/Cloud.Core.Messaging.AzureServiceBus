@@ -33,7 +33,7 @@ IReactiveMessenger sbMessenger = new ServiceBusMessenger(new MsiConfig());
 Whereas the instantiation could easily be changed to use Google as follows:
 
 ```csharp
-IReactiveMessenger sbMessenger = new PubSubMessenger(new DevOps.GCloud.CloudPubSubConfig());
+IReactiveMessenger gcMessenger = new PubSubMessenger(CloudPubSubConfig());
 ```
 
 
