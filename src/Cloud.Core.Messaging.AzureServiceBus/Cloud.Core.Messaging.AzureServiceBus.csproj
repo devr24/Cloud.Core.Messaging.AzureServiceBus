@@ -6,14 +6,14 @@
     <Company>Robert McCabe</Company>
     <Version>3.1</Version>
     <Authors>Robert McCabe</Authors>
-	<PackageIconUrl>https://cloud1core.blob.core.windows.net/icons/CC.png</PackageIconUrl>
+    <PackageIconUrl>https://cloud1core.blob.core.windows.net/icons/CC.png</PackageIconUrl>
     <Copyright>Robert McCabe</Copyright>
     <Description>An Azure specific implementation of the IMessenger and IReactiveMessenger which connects to ServiceBus.</Description>
     <PackageTags>Messaging Messenger ServiceBus Queue Topic Cloud.Core .net-Core Core aspnetcore</PackageTags>
     <SignAssembly>false</SignAssembly>
     <ProjectGuid>{38bfefd3-f861-4f96-9a8b-6e1b2036c7e0}</ProjectGuid>
-	<RepositoryUrl>https://github.com/rmccabe24/Cloud.Core.Messaging.AzureServiceBus</RepositoryUrl>
-	<RepositoryType>Private</RepositoryType>
+    <RepositoryUrl>https://github.com/rmccabe24/Cloud.Core.Messaging.AzureServiceBus</RepositoryUrl>
+    <RepositoryType>Private</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
