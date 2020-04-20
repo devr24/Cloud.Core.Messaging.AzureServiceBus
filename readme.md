@@ -27,13 +27,13 @@ If in the future the calling application was to be run in AWS or Google Cloud, t
 instantiation of IMessage.  Using this package, it would look like this:
 
 ```csharp
-IReactiveMessenger msn = new ServiceBusMessenger(new DevOps.Azure.ServiceBusConfig());
+IReactiveMessenger sbMessenger = new ServiceBusMessenger(new MsiConfig());
 ```
 
 Whereas the instantiation could easily be changed to use Google as follows:
 
 ```csharp
-IReactiveMessenger msn = new PubSubMessenger(new DevOps.GCloud.CloudPubSubConfig());
+IReactiveMessenger sbMessenger = new PubSubMessenger(new DevOps.GCloud.CloudPubSubConfig());
 ```
 
 
