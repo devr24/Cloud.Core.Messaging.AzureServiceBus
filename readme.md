@@ -1,7 +1,5 @@
 # **Cloud.Core.Messaging.ServiceBus**  
-[![Build status](https://dev.azure.com/cloudcoreproject/CloudCore/_apis/build/status/Cloud.Core%20Packages/Cloud.Core.Messenger.AzureServiceBus_Package)](https://dev.azure.com/cloudcoreproject/CloudCore/_build/latest?definitionId=11)
-![Code Coverage](https://cloud1core.blob.core.windows.net/codecoveragebadges/Cloud.Core.Messaging.AzureServiceBus-LineCoverage.png)  
-[![Cloud.Core.Messaging.AzureServiceBus package in Cloud.Core feed in Azure Artifacts](https://feeds.dev.azure.com/cloudcoreproject/dfc5e3d0-a562-46fe-8070-7901ac8e64a0/_apis/public/Packaging/Feeds/8949198b-5c74-42af-9d30-e8c462acada6/Packages/10bce412-14c4-4eb3-b2fb-8c0def43f9eb/Badge)](https://dev.azure.com/cloudcoreproject/CloudCore/_packaging?_a=package&feed=8949198b-5c74-42af-9d30-e8c462acada6&package=10bce412-14c4-4eb3-b2fb-8c0def43f9eb&preferRelease=true)
+[![Build status](https://dev.azure.com/cloudcoreproject/CloudCore/_apis/build/status/Cloud.Core%20Packages/Cloud.Core.Messenger.AzureServiceBus_Package)](https://dev.azure.com/cloudcoreproject/CloudCore/_build/latest?definitionId=11) ![Code Coverage](https://cloud1core.blob.core.windows.net/codecoveragebadges/Cloud.Core.Messaging.AzureServiceBus-LineCoverage.png) [![Cloud.Core.Messaging.AzureServiceBus package in Cloud.Core feed in Azure Artifacts](https://feeds.dev.azure.com/cloudcoreproject/dfc5e3d0-a562-46fe-8070-7901ac8e64a0/_apis/public/Packaging/Feeds/8949198b-5c74-42af-9d30-e8c462acada6/Packages/10bce412-14c4-4eb3-b2fb-8c0def43f9eb/Badge)](https://dev.azure.com/cloudcoreproject/CloudCore/_packaging?_a=package&feed=8949198b-5c74-42af-9d30-e8c462acada6&package=10bce412-14c4-4eb3-b2fb-8c0def43f9eb&preferRelease=true)
 
 <div id="description">
 
