@@ -7,7 +7,7 @@
     <Version>3.1</Version>
     <Authors>Robert McCabe</Authors>
     <PackageIconUrl>https://cloud1core.blob.core.windows.net/icons/CC.png</PackageIconUrl>
-    <Copyright>Robert McCabe</Copyright>
+    <Copyright>Aylesbury Solutions Ltd</Copyright>
     <Description>An Azure specific implementation of the IMessenger and IReactiveMessenger which connects to ServiceBus.</Description>
     <PackageTags>Messaging Messenger ServiceBus Queue Topic Cloud.Core .net-Core Core aspnetcore</PackageTags>
     <SignAssembly>false</SignAssembly>
