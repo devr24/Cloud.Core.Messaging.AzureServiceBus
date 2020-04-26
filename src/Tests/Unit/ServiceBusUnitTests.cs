@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Subjects;
 using Cloud.Core.Messaging.AzureServiceBus.Config;
 using Cloud.Core.Messaging.AzureServiceBus.Models;
@@ -14,25 +13,35 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
     [IsUnit]
     public class ServiceBusUnitTests
     {
+        /// <summary>Ensure the connector is disposed as expected.</summary>
         [Fact]
-        public void Test_ServiceDispose()
+        public void Test_ServiceBusConnector_ServiceDispose()
         {
-            var client = new ServiceBusMessenger(new ConnectionConfig { ConnectionString = "test.test" });
-            client.Name.Should().BeNull();
-            client.Dispose();
-            client.Dispose();
-            client.Disposed.Should().BeTrue();
-
+            // Assert
+            var messenger = new ServiceBusMessenger(new ConnectionConfig { ConnectionString = "test.test" });
             var connector = new ServiceBusConnector<object>(new ServiceBusManager("", new ConnectionConfig()), new Subject<object>(), null);
+
+            // Act - call dispose.
+            messenger.Dispose();
             connector.Dispose();
+
+            // Called a second time to test branch.
+            messenger.Dispose();
             connector.Dispose();
+
+            // Assert - disposed as expected.
+            messenger.Disposed.Should().BeTrue();
             connector.Disposed.Should().BeTrue();
         }
 
+        /// <summary>Ensure the enable backoff only works when sender is configured.</summary>
         [Fact]
-        public void Test_ConfigBase_Initialise()
+        public void Test_ConfigBase_EnableBackoffEnabled()
         {
+            // Arrange
             var config = new ConfigTest();
+
+            // Act/Assert - backoff can only be set when both receiver and sender has been setup.
             config.EnableAutobackOff.Should().BeFalse();
             config.EnableAutobackOff = true;
             config.EnableAutobackOff.Should().BeFalse();
@@ -42,6 +51,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             config.EnableAutobackOff.Should().BeTrue();
         }
 
+        /// <summary>Ensure config instance name is picked out as expected from the connection string.</summary>
         [Fact]
         public void Test_ConnectionConfig_InstanceName()
         {
@@ -58,12 +68,14 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             config.InstanceName.Should().Be("A");
         }
 
+        /// <summary>Check the add service collection extension configures as expected.</summary>
         [Fact]
         public void Test_ServiceBusMessenger_ServiceCollectionAddSingleton()
         {
-            // Principle needs "Set" permissions to run this.
+            // Accept
             IServiceCollection serviceCollection = new ServiceCollection();
 
+            // Act/Assert
             serviceCollection.AddServiceBusSingleton<IReactiveMessenger>("test", "test", "test");
             serviceCollection.ContainsService(typeof(IReactiveMessenger)).Should().BeTrue();
             serviceCollection.ContainsService(typeof(NamedInstanceFactory<IReactiveMessenger>)).Should().BeTrue();
@@ -114,9 +126,11 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             serviceCollection.ContainsService(typeof(IReactiveMessenger)).Should().BeTrue();
         }
 
+        /// <summary>Check receiver info validate works as expected for the error queue.</summary>
         [Fact]
-        public void Test_ServiceBusMessenge_ReceiverSetup()
+        public void Test_ReceiverInfo_ValidateErrorReceiver()
         {
+            // Arrange/Act
             var errorReceiver = new ReceiverInfo()
             {
                 EntityName = "test",
@@ -127,9 +141,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
                 MaxLockDuration = new TimeSpan(0, 0, 3)
             };
 
+            // Assert
             errorReceiver.ReceiverFullPath.Should().Be($"{errorReceiver.EntityName}{ReceiverSetup.DeadLetterQueue}");
             errorReceiver.LockRenewalTimeInSeconds.Should().Be(3);
+            AssertExtensions.DoesNotThrow(() => errorReceiver.Validate());
+        }
 
+        /// <summary>Check receiver info validate works as expected for the active queue.</summary>
+        [Fact]
+        public void Test_ReceiverInfo_ValidateActiveReceiver()
+        {
+            // Arrange
             var activeReceiver = new ReceiverInfo()
             {
                 EntityName = "test",
@@ -139,12 +161,19 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
                 MaxLockDuration = new TimeSpan(0, 0, 1)
             };
 
-            activeReceiver.ReceiverFullPath.Should().Be($"{errorReceiver.EntityName}");
+            // Act/Assert
+            activeReceiver.ReceiverFullPath.Should().Be($"{activeReceiver.EntityName}");
             activeReceiver.LockRenewalTimeInSeconds.Should().Be(1);
+        }
 
-            AssertExtensions.DoesNotThrow(() => errorReceiver.Validate());
-
+        /// <summary>Check receiver info ReceiverFullPath gets configured as expected.</summary>
+        [Fact]
+        public void Test_ReceiverInfo_ReceiverFullPath()
+        {
+            // Arrange/Act
             var receiver = new ReceiverInfo { EntityType = EntityType.Topic };
+
+            // Assert
             receiver.ReceiverFullPath.Should().BeNull();
             receiver.EntityName = "test";
             receiver.ReceiverFullPath.Should().BeNull();
@@ -152,22 +181,29 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             receiver.ReceiverFullPath.Should().Be("test/subscriptions/test");
             receiver.ReadFromErrorQueue = true;
             receiver.ReceiverFullPath.Should().Be("test/subscriptions/test/$deadletterqueue");
+        }
 
+        /// <summary>Ensure to string method works as expected for Connection config.</summary>
+        [Fact]
+        public void Test_ConnectionConfig_ToString()
+        {
+            // Arrange
             var conn = new ConnectionConfig();
+
+            // Act/Assert
             conn.ToString().Should().StartWith("ConnectionString: [NOT SET]");
             conn.ConnectionString = "test";
             conn.ToString().Should().StartWith("ConnectionString: [SET]");
         }
 
+        /// <summary>Ensure validation method works as expected for Msi config.</summary>
         [Fact]
-        public void Test_ServiceBusMessenger_ConfigValidation()
+        public void Test_MsiConfig_Validate()
         {
+            // Arrange
             var msiConfig = new MsiConfig() { SharedAccessPolicyName = "" };
-            var connectionConfig = new ConnectionConfig();
-            var spConfig = new ServicePrincipleConfig() { SharedAccessPolicyName = "" };
-            var setup = new ReceiverSetup();
 
-            // Check the msi config validation.
+            // Act/Assert - Check the msi config validation.
             Assert.Throws<ArgumentException>(() => msiConfig.Validate());
             msiConfig.InstanceName = "test";
             Assert.Throws<ArgumentException>(() => msiConfig.Validate());
@@ -178,14 +214,30 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             msiConfig.SharedAccessPolicyName = "test";
             AssertExtensions.DoesNotThrow(() => msiConfig.Validate());
             msiConfig.ToString().Should().NotBeNullOrEmpty();
+        }
 
-            // Check connection string config validation.
+        /// <summary>Ensure validation method works as expected for Connection config.</summary>
+        [Fact]
+        public void Test_ConnectionConfig_Validate()
+        {
+            // Arrange
+            var connectionConfig = new ConnectionConfig();
+
+            // Act/Assert - Check connection string config validation.
             Assert.Throws<ArgumentException>(() => connectionConfig.Validate());
             connectionConfig.ConnectionString = "test";
             AssertExtensions.DoesNotThrow(() => connectionConfig.Validate());
             connectionConfig.ToString().Should().NotBeNullOrEmpty();
+        }
 
-            // Check the service Principle config validation.
+        /// <summary>Ensure validation method works as expected for Service Principle config.</summary>
+        [Fact]
+        public void Test_ervicePrincipleConfig_Validate()
+        {
+            // Arrange
+            var spConfig = new ServicePrincipleConfig() { SharedAccessPolicyName = "" };
+
+            // Act/Assert - Check the service Principle config validation.
             Assert.Throws<ArgumentException>(() => spConfig.Validate());
             spConfig.InstanceName = "test";
             Assert.Throws<ArgumentException>(() => spConfig.Validate());
@@ -200,7 +252,16 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             spConfig.SharedAccessPolicyName = "test";
             AssertExtensions.DoesNotThrow(() => spConfig.Validate());
             spConfig.ToString().Should().NotBeNullOrEmpty();
+        }
 
+        /// <summary>Ensure validation method works as expected for Receiver config.</summary>
+        [Fact]
+        public void Test_ReceiverConfig_Validate()
+        {
+            // Arrange
+            var setup = new ReceiverSetup();
+
+            // Act/Assert
             Assert.Throws<ArgumentException>(() => setup.Validate());
             setup.EntityType = EntityType.Queue;
             setup.EntityName = "test";
@@ -214,31 +275,46 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             setup.ToString().Should().NotBeNull();
         }
 
+        /// <summary>Verify attempt to call not implemented interface method gives expected error.</summary>
         [Fact]
-        public void Test_ServiceBusMessenger_GetAccessTokenUrl()
+        public void Test_ServiceBusMessenger_GetAccessTokenUrlNotImplemented()
         {
+            // Arrange/Act
             var msiConfig = new MsiConfig() { SharedAccessPolicyName = "" };
             var connectionConfig = new ConnectionConfig();
             var spConfig = new ServicePrincipleConfig() { SharedAccessPolicyName = "TestPolicy", InstanceName = "testSBInstance", AppId = "TestAppId", AppSecret = "TestAppSecret", TenantId = "TestTenantId", SubscriptionId = "FakeSubscriptionId" };
             var serviceBus = new ServiceBusMessenger(spConfig);
-            serviceBus.ToString().Should().NotBeNullOrEmpty();
             var sharedAccessConfig = new SignedAccessConfig(new List<AccessPermission> { AccessPermission.Read }, DateTimeOffset.UtcNow.AddDays(1));
 
+            // Assert
+            serviceBus.ToString().Should().NotBeNullOrEmpty();
+            serviceBus.Name.Should().Be("testSBInstance");
+            (serviceBus.Config as ServicePrincipleConfig).Should().NotBeNull();
             Assert.Throws<NotImplementedException>(() => serviceBus.GetSignedAccessUrl(sharedAccessConfig));
         }
 
+        /// <summary>Verify implicit conversion works as expected.</summary>
         [Fact]
-        public void Test_MessageEntity_Implicit()
+        public void Test_MessageEntity_ImplicitConversion()
         {
+            // Arrange
             var test = "hello";
+
+            // Act
             var messageEntity = (MessageEntity<string>)test;
+
+            // Assert
             messageEntity.Body.Should().BeEquivalentTo(test);
         }
 
+        /// <summary>Check validate throws errors as expected.</summary>
         [Fact]
         public void Test_SenderInfo_Validate()
         {
+            // Arrange
             var sender = new SenderInfo();
+
+            // Act/Assert
             Assert.Throws<ArgumentException>(() => sender.Validate());
         }
     }

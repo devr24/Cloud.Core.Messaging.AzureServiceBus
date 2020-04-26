@@ -33,9 +33,8 @@
                     return null;
                 }
 
-                // Account name is used as the indentifier.
-                return parts.Where(p => p.StartsWith(replaceStr))
-                    .FirstOrDefault()?.Replace(replaceStr, string.Empty);
+                // Account name is used as the identifier.
+                return parts.FirstOrDefault(p => p.StartsWith(replaceStr))?.Replace(replaceStr, string.Empty);
             }
         }
 

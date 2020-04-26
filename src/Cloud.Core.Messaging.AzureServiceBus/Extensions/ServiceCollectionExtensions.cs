@@ -8,7 +8,7 @@
     using Cloud.Core.Messaging.AzureServiceBus.Models;
 
     /// <summary>
-    /// Class ServiceCollection extensions.
+    /// Class Service Collection extensions.
     /// </summary>
     public static class ServiceCollectionExtensions
     {

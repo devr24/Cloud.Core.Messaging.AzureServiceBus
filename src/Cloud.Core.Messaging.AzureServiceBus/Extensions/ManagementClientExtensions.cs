@@ -8,11 +8,11 @@
     using Cloud.Core.Messaging.AzureServiceBus.Models;
 
     /// <summary>
-    /// Class ManagementClientExtensions.
+    /// Class Management Client extensions.
     /// </summary>
     public static class ManagementClientExtensions
     {
-        private static readonly object _creationLock = new object();
+        private static readonly object CreationLock = new object();
 
         /// <summary>
         /// Create a topic if it does not exist.
@@ -70,7 +70,7 @@
         /// <returns><see cref="TopicDescription"/> Topic description.</returns>
         public static TopicDescription CreateTopicIfNotExists(this ManagementClient manager, string topicName, string subscriptionName, List<KeyValuePair<string, string>> sqlFilters)
         {
-            lock (_creationLock)
+            lock (CreationLock)
             {
                 // Setup Topic (if not exists).
                 var description = EnsureTopic(manager, topicName).GetAwaiter().GetResult();
@@ -104,7 +104,7 @@
         /// <exception cref="ArgumentException">Cannot create queue as a topic with this name exists already - queueName</exception>
         public static QueueDescription CreateQueueIfNotExists(this ManagementClient manager, string queueName)
         {
-            lock (_creationLock)
+            lock (CreationLock)
             {
                 QueueDescription queue;
 
