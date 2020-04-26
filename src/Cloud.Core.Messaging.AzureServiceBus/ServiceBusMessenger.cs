@@ -47,6 +47,12 @@
         private ServiceBusManager _sbInfo;
         internal bool Disposed;
 
+        /// <summary>
+        /// Gets or sets the configuration.
+        /// </summary>
+        /// <value>The configuration.</value>
+        public object Config { get; }
+
         /// <summary>Name of the object instance.</summary>
         public string Name { get; set; }
 
@@ -107,6 +113,7 @@
 
             Logger = logger;
             _msiConfig = config;
+            Config = config;
         }
 
         /// <summary>
@@ -122,6 +129,7 @@
 
             Logger = logger;
             _spConfig = config;
+            Config = config;
         }
 
         /// <summary>
@@ -137,6 +145,7 @@
 
             Logger = logger;
             _connConfig = config;
+            Config = config;
         }
 
         /// <summary>
@@ -244,7 +253,9 @@
             {
                 // If the subscription (callback) has already been setup for this type, then throw an error.
                 if (MessageSubs.ContainsKey(typeof(T)))
+                {
                     throw new InvalidOperationException("Callback for this message type already configured. Only one callback per type is supported.");
+                }
 
                 var queue = SetupConnectorType<T>();
 
@@ -364,7 +375,6 @@
         /// <typeparam name="T"></typeparam>
         public void CancelReceive<T>() where T : class
         {
-
             System.Threading.Monitor.Enter(CancelGate);
 
             try
@@ -407,7 +417,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="messages">The list of messages.</param>
         /// <returns>Task.</returns>
-        public async Task CompleteAll<T>(IEnumerable<T> messages) where T : class
+        public async Task Complete<T>(IEnumerable<T> messages) where T : class
         {
             await GetQueueAdapterIfExists<T>().Complete(messages).ConfigureAwait(false);
         }
@@ -468,7 +478,7 @@
             }
             finally
             {
-                System.Threading.Monitor.Exit(SetupGate);
+                Monitor.Exit(SetupGate);
             }
         }
 
@@ -588,9 +598,11 @@
                     throw new InvalidOperationException($"Could not find the a service bus instance in the subscription with ID {subscriptionId}");
 
                 // Get the built connection string.
-                var connectionString = sbNamespace.AuthorizationRules.GetByName(sharedAccessPolicy).GetKeys().PrimaryConnectionString;
+                var name = await sbNamespace.AuthorizationRules.GetByNameAsync(sharedAccessPolicy);
+                var keys = await name.GetKeysAsync();
+                var connectionString = keys.PrimaryConnectionString;
 
-                // Cache the connection string off so we don't have to reauthenticate.
+                // Cache the connection string off so we don't have to re-authenticate.
                 if (!ConnectionStrings.ContainsKey(instanceName))
                 {
                     ConnectionStrings.TryAdd(instanceName, connectionString);

@@ -8,9 +8,9 @@
     using Cloud.Core.Messaging.AzureServiceBus.Models;
 
     /// <summary>
-    /// Class ServiceCollectionExtensions.
+    /// Class ServiceCollection extensions.
     /// </summary>
-    public static class IServiceCollectionExtensions
+    public static class ServiceCollectionExtensions
     {
         /// <summary>
         /// Add service bus singleton of type T, using named properties (as opposed to passing MsiConfig/ServicePrincipleConfig etc).
@@ -23,7 +23,7 @@
         /// <param name="subscriptionId">Subscription within the tenancy to use for the service bus instance.</param>
         /// <param name="receiver">Receiver configuration (if any).</param>
         /// <param name="sender">Sender configuration (if any).</param>
-        /// <param name="enableAutoBackoff">Backoff mechanism enabled (only works when both sender & receiver is configured).</param>
+        /// <param name="enableAutoBackoff">Backoff mechanism enabled (only works when both sender and receiver is configured).</param>
         /// <returns>Modified service collection with the IReactiveMessenger, IMessenger and NamedInstanceFactory{T} configured.</returns>
         public static IServiceCollection AddServiceBusSingleton<T>(this IServiceCollection services, string instanceName, string tenantId, string subscriptionId, ReceiverSetup receiver = null, SenderSetup sender = null, bool enableAutoBackoff = false)
             where T : IMessageOperations
@@ -43,7 +43,7 @@
         /// <param name="subscriptionId">Subscription within the tenancy to use for the service bus instance.</param>
         /// <param name="receiver">Receiver configuration (if any).</param>
         /// <param name="sender">Sender configuration (if any).</param>
-        /// <param name="enableAutoBackoff">Backoff mechanism enabled (only works when both sender & receiver is configured).</param>
+        /// <param name="enableAutoBackoff">Backoff mechanism enabled (only works when both sender and receiver is configured).</param>
         /// <returns>Modified service collection with the IReactiveMessenger, IMessenger and NamedInstanceFactory{T} configured.</returns>
         public static IServiceCollection AddServiceBusSingletonNamed<T>(this IServiceCollection services, string key, string instanceName, string tenantId, string subscriptionId, ReceiverSetup receiver = null, SenderSetup sender = null, bool enableAutoBackoff = false)
             where T : IMessageOperations

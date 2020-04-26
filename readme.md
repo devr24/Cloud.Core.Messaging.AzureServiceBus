@@ -58,9 +58,6 @@ You can call `Abandon`, `Complete` and `Error` on the `IMessage` interface.
 - `Error` will move the message to the error queue (dead letter queue), used during critical processing errors where there may be problems with 
 validation, business rules, incorrect data, etc.
 
-The interface has been implemented within this package as follows:
-
-![Messenger Implementation](contents/ServiceBus_Abstraction.png)
 
 ### Why wrap the ServiceBus API?
 
@@ -76,11 +73,6 @@ Can easily be changed (when developed) to:
 ```csharp
 IReactiveMessenger msgQueue = new RabbitMQMessenger()
 ```
-
-
-
-
-
 
 
 ### Send and receive messages

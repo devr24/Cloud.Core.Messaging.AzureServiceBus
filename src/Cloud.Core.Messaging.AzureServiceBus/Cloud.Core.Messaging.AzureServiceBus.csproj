@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Company>Robert McCabe</Company>
+    <Company>Aylesbury Solutions Ltd</Company>
     <Version>3.1</Version>
     <Authors>Robert McCabe</Authors>
     <PackageIconUrl>https://cloud1core.blob.core.windows.net/icons/CC.png</PackageIconUrl>
@@ -14,10 +14,11 @@
     <ProjectGuid>{38bfefd3-f861-4f96-9a8b-6e1b2036c7e0}</ProjectGuid>
     <RepositoryUrl>https://github.com/rmccabe24/Cloud.Core.Messaging.AzureServiceBus</RepositoryUrl>
     <RepositoryType>Private</RepositoryType>
+    <DocumentationFile>Cloud.Core.Messaging.AzureServiceBus.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cloud.Core" Version="2.1.3513.106" />
+    <PackageReference Include="Cloud.Core" Version="3.1.3519.275" />
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.33.0" />
     <PackageReference Include="Microsoft.Azure.ServiceBus" Version="4.1.3" />
     <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.7" />

@@ -5,7 +5,9 @@
     /// </summary>
     public enum EntityType
     {
+        /// <summary>Topic entity type.</summary>
         Topic,
+        /// <summary>Queue entity type.</summary>
         Queue
     }
 }
