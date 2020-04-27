@@ -17,7 +17,7 @@
     using Microsoft.Azure.ServiceBus.InteropExtensions;
     using Exceptions;
     using Models;
-    using Cloud.Core.Comparer;
+    using Comparer;
     using System.Diagnostics.CodeAnalysis;
 
     /// <summary>
