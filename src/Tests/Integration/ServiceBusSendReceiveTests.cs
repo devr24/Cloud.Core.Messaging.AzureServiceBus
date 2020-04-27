@@ -133,6 +133,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             connector.Config.EnableAutoBackOff = true;
             connector.ShouldBackOff().Should().BeFalse();
             connector.Config.IsBackingOff.Should().BeFalse();
+            ServiceBusMessenger.ConnectionStrings.Should().NotBeEmpty();
         }
 
         /// <summary>Ensure the update receiver works after a receive one was executed.</summary>

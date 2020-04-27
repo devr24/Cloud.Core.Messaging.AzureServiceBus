@@ -76,6 +76,7 @@
                         // Connection string and config comes direction from ConnConfig object.
                         config = _connConfig;
                         connectionString = _connConfig.ConnectionString;
+                        ConnectionStrings.TryAdd(_connConfig.InstanceName, connectionString);
                     }
                     else
                     {
