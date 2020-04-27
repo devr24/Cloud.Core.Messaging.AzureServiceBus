@@ -417,7 +417,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="messages">The list of messages.</param>
         /// <returns>Task.</returns>
-        public async Task Complete<T>(IEnumerable<T> messages) where T : class
+        public async Task CompleteAll<T>(IEnumerable<T> messages) where T : class
         {
             await GetQueueAdapterIfExists<T>().Complete(messages).ConfigureAwait(false);
         }

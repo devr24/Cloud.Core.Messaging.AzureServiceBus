@@ -266,7 +266,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                 }
             }
 
-            topicMessenger.Complete(messageList).GetAwaiter().GetResult();
+            topicMessenger.CompleteAll(messageList).GetAwaiter().GetResult();
 
             count = connector.GetReceiverMessageCount().GetAwaiter().GetResult();
 
