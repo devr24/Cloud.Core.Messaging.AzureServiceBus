@@ -27,6 +27,7 @@
     /// <typeparam name="T">The type of the message that we are routing.</typeparam>
     /// <seealso cref="ServiceBusConnector" />
     /// <inheritdoc />
+    [ExcludeFromCodeCoverage]
     internal sealed class ServiceBusConnector<T> : ServiceBusConnector where T : class
     {
         internal readonly ConcurrentDictionary<T, Message> Messages = new ConcurrentDictionary<T, Message>(ObjectReferenceEqualityComparer<T>.Default);
