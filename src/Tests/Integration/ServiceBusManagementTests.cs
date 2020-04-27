@@ -37,7 +37,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         [InlineData(100)]
         [InlineData(200)]
         [InlineData(500)]
-        public void ServiceBusQueueEntityManager_ReceiverMessageCount(int numMessagesToSend)
+        public void Test_ServiceBusQueueEntityManager_ReceiverMessageCount(int numMessagesToSend)
         {
             const string tableName = "ManagementCountQueue";
 
@@ -75,7 +75,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         [InlineData(100)]
         [InlineData(200)]
         [InlineData(500)]
-        public void ServiceBusTopicEntityManager_ReceiverMessageCount(int numMessagesToSend)
+        public void Test_ServiceBusTopicEntityManager_ReceiverMessageCount(int numMessagesToSend)
         {
             const string tableName = "ManagementCountTopic";
 
@@ -108,7 +108,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
         /// <summary>Verify the disabled status of an entity. As newly created entities are NOT disabled by default when they are created, we will verify disabled is false.</summary>
         [Fact]
-        public void ServiceBusManager_CheckDisabled()
+        public void Test_ServiceBusManager_CheckDisabled()
         {
             const string topicTableName = "ManagementDisabledTopic";
             var topicMessenger = GetTopicMessenger(topicTableName, "testSub");
@@ -128,7 +128,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         [InlineData(200)]
         [InlineData(400)]
         [InlineData(600)]
-        public void ServiceBusTopicEntityManager_ReceiverEntityUsagePercentage(int numMessagesToSend)
+        public void Test_ServiceBusTopicEntityManager_ReceiverEntityUsagePercentage(int numMessagesToSend)
         {
             const string tableName = "ManagementPercentTopic";
 
@@ -170,7 +170,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         [InlineData(100)]
         [InlineData(200)]
         [InlineData(500)]
-        public void ServiceBusQueueEntityManager_ReceiverEntityUsagePercentage(int numMessagesToSend)
+        public void Test_ServiceBusQueueEntityManager_ReceiverEntityUsagePercentage(int numMessagesToSend)
         {
             const string tableName = "ManagementPercentQueue";
 
@@ -203,13 +203,13 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
         /// <summary>Verify subscription rules are applied after entity purge.</summary>
         [Fact]
-        public async Task ServiceBusTopicMessenger_ManagerEntityPurge()
+        public async Task Test_ServiceBusTopicMessenger_ManagerEntityPurge()
         {
             // Arrange
             var manager = GetEntityManagerInstance();
             string topicName = "managementpurgetopic";
 
-            // Create multiple subscriptions.
+            // Act/Assert - Create multiple subscriptions.
             manager.CreateEntity(new ServiceBusEntityConfig { EntityType = EntityType.Topic, EntityName = topicName, EntitySubscriptionName = "testsub1", SqlFilter = new KeyValuePair<string, string>("versionRule1", "Version = '2.0'") }).GetAwaiter().GetResult();
             manager.CreateEntity(new ServiceBusEntityConfig { EntityType = EntityType.Topic, EntityName = topicName, EntitySubscriptionName = "testsub1", SqlFilter = new KeyValuePair<string, string>("versionRule2", "Version = '3.0'") }).GetAwaiter().GetResult();
             manager.CreateEntity(new ServiceBusEntityConfig { EntityType = EntityType.Topic, EntityName = topicName, EntitySubscriptionName = "testsub2", SqlFilter = new KeyValuePair<string, string>("versionRule1", "Version = '2.0'") }).GetAwaiter().GetResult();
@@ -253,17 +253,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         /// Test that entity manager can create a queue.
         /// </summary>
         [Fact]
-        public async Task ServiceBusEntityManager_CreateEntity_CreateQueue()
+        public async Task Test_ServiceBusEntityManager_CreateEntity_CreateQueue()
         {
             // Arrange
             var entityName = "new-queue-test";
             var config = new ServiceBusEntityConfig() { EntityType = EntityType.Queue, EntityName = entityName };
             var manager = GetEntityManagerInstance();
 
-            //Create entity
+            // Act - Create entity
             await manager.CreateEntity(config);
 
-            //Assert enity is created
+            //Assert - entity is created
             var entity = await manager.GetEntity(entityName);
             Assert.NotNull(entity);
             Assert.True(entity.EntityName == entityName);
@@ -274,17 +274,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         /// Test that entity manager can create a topic with no subs.
         /// </summary>
         [Fact]
-        public async Task ServiceBusEntityManager_CreateEntity_CreateTopic_NoSubsciption()
+        public async Task Test_ServiceBusEntityManager_CreateEntity_CreateTopic_NoSubsciption()
         {
             // Arrange
             var entityName = "new-topic-test";
             var config = new ServiceBusEntityConfig() { EntityType = EntityType.Topic, EntityName = entityName };
             var manager = GetEntityManagerInstance();
 
-            //Create entity
+            // Act - Create entity
             await manager.CreateEntity(config);
 
-            //Assert enity is created
+            // Assert - entity is created
             var entity = await manager.GetEntity(entityName);
             Assert.NotNull(entity);
             Assert.True(entity.EntityName == entityName);
@@ -296,17 +296,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         /// Test that entity manager can create a topic with subs.
         /// </summary>
         [Fact]
-        public async Task ServiceBusEntityManager_CreateEntity_CreateTopic_WithSubsciption()
+        public async Task Test_ServiceBusEntityManager_CreateEntity_CreateTopic_WithSubsciption()
         {
             // Arrange
             var entityName = "new-topic-test2";
             var config = new ServiceBusEntityConfig() { EntityType = EntityType.Topic, EntityName = entityName, EntitySubscriptionName = "test-sub" };
             var manager = GetEntityManagerInstance();
 
-            //Create entity
+            // Act - Create entity
             await manager.CreateEntity(config);
 
-            //Assert enity is created
+            // Assert - entity is created
             var entity = await manager.GetEntity(entityName);
             Assert.NotNull(entity);
             Assert.True(entity.EntityName == entityName);

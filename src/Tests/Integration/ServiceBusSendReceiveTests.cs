@@ -34,12 +34,16 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             RemoveEntities();
         }
 
+        /// <summary>Ensure the message entity counts work as expected.</summary>
         [Fact]
-        public void ServiceBusMessenger_Count()
+        public void Test_ServiceBusMessenger_Count()
         {
+            // Arrange
             var queueMessenger = GetQueueMessenger("testCountQueue");
             queueMessenger.ConnectionManager.EntityFullPurge(queueMessenger.ConnectionManager.ReceiverInfo.EntityName).GetAwaiter().GetResult();
             queueMessenger.ConnectionManager.EntityFullPurge(queueMessenger.ConnectionManager.SenderInfo.EntityName).GetAwaiter().GetResult();
+            
+            // Act/Assert
             Assert.NotEmpty(queueMessenger.ConnectionManager.ToString());
 
             var topicMessenger = GetTopicMessenger("testCountTopic", "testSub");
@@ -56,9 +60,11 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             topicCount.ErroredEntityCount.Should().Be(0);
         }
 
+        /// <summary>Ensure message properties can be received as a typed object.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_ReadPropertiesTyped()
+        public void Test_ServiceBusTopicMessenger_ReadPropertiesTyped()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testReadPropertiesTyped", "testSub");
             var listOfMessages = new List<TestProps>();
 
@@ -67,7 +73,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                 listOfMessages.Add(new TestProps { Test1 = i, Test2 = true });
             }
 
-            // Send the message with property - customising each one to have unique value for "SomeProp1".  We will then verify this.
+            // Act - Send the message with property - customising each one to have unique value for "SomeProp1".  We will then verify this.
             topicMessenger.SendBatch(listOfMessages, (item) =>
                 new[] { new KeyValuePair<string, object>("Test1", item.Test1) }).GetAwaiter().GetResult();
 
@@ -81,6 +87,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
             do
             {
+                // Arrange
                 msg.Body.Test1.Should().BeGreaterThan(0).And.BeLessThan(100);
                 msg.Properties.Keys.Should().Contain("Test1");
                 msg.GetPropertiesTyped<TestProps>().Test1.Should().Be(msg.Body.Test1);
@@ -88,13 +95,15 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             } while (msg != null);
         }
 
+        /// <summary>Ensure receiving a single message from a topic works as expected.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_ReceiveOne()
+        public void Test_ServiceBusTopicMessenger_ReceiveOne()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testReceiveOne", "testSub");
             var testMessages = Lorem.GetSentence(3);
 
-            // Send the message to initiate receive.
+            // Act - Send the message to initiate receive.
             topicMessenger.Send(testMessages).GetAwaiter().GetResult();
             Thread.Sleep(2000);
             var receivedMessage = topicMessenger.ReceiveOne<string>();
@@ -108,6 +117,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             if (connector == null)
                 Assert.False(true, "Could not retrieve queue connector");
 
+            // Assert
             var count = connector.GetReceiverMessageCount().GetAwaiter().GetResult();
             connector.Should().NotBeNull();
 
@@ -125,8 +135,9 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             connector.Config.IsBackingOff.Should().BeFalse();
         }
 
+        /// <summary>Ensure the update receiver works after a receive one was executed.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_UpdateReceiverReceiveOne()
+        public void Test_ServiceBusTopicMessenger_UpdateReceiverReceiveOne()
         {
             // Arrange
             var topicOne = GetTopicMessenger("updatereceiverreceiveroneA", "subone");
@@ -135,7 +146,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             ((ServiceBusManager)topicOne.EntityManager).EntityFullPurge("updatereceiverreceiveroneA", true).GetAwaiter().GetResult();
             ((ServiceBusManager)topicTwo.EntityManager).EntityFullPurge("updatereceiverreceivertwoB", true).GetAwaiter().GetResult();
 
-            // Act and Assert
+            // Act/Assert
             var testMessageOne = "Message One";
             var testMessageTwo = "Message Two";
 
@@ -182,9 +193,11 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             (topicOne.EntityManager as ServiceBusManager)?.DeleteEntity(EntityType.Topic, "updateReceiverReceiveTwoB").GetAwaiter().GetResult();
         }
 
+        /// <summary>Ensure receive a single message where its contents is typed, works as expected.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_ReceiveOneTyped()
+        public void Test_ServiceBusTopicMessenger_ReceiveOneTyped()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testReceiveOneTyped", "testSub");
             var testMessage = Lorem.GetSentence(3);
             var props = new[]
@@ -199,7 +212,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                 testMessage
             };
 
-            // Send the message to initiate receive.
+            // Act/Assert - Send the message to initiate receive.
             topicMessenger.SendBatch(items, props).GetAwaiter().GetResult();
 
             Thread.Sleep(2000);
@@ -237,12 +250,15 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             connector.Config.IsBackingOff.Should().BeFalse();
         }
 
+        /// <summary>Ensure the topic can complete all messages in a list.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_CompleteManyMessages()
+        public void Test_ServiceBusTopicMessenger_CompleteAllMessages()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testCompleteMany", "testSub");
             var testMessages = new List<string>(Lorem.GetParagraphs());
 
+            // Act/Assert
             topicMessenger.SendBatch(testMessages).GetAwaiter().GetResult();
             Thread.Sleep(2000);
 
@@ -273,13 +289,15 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             Assert.True(count.ActiveEntityCount == 0);
         }
 
+        /// <summary>Ensure receiving a single message from a queue works as expected.</summary>
         [Fact]
-        public void ServiceBusQueueMessenger_ReceiveOne()
+        public void Test_ServiceBusQueueMessenger_ReceiveOne()
         {
+            // Arrange
             var queueMessenger = GetQueueMessenger("testReceiveOneQueue");
             var testMessages = "TestMessage";
 
-            // Send the message to initiate receive.
+            // Act - Send the message to initiate receive.
             queueMessenger.Send(testMessages).GetAwaiter().GetResult();
             Thread.Sleep(10000);
 
@@ -289,6 +307,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             {
                 var receivedMessage = queueMessenger.ReceiveOne<string>();
 
+                // Assert
                 Assert.NotNull(receivedMessage);
                 queueMessenger.Complete(receivedMessage).GetAwaiter().GetResult();
 
@@ -299,31 +318,35 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             lastMessage.Should().BeNull();
         }
 
+        /// <summary>Ensure a sending a large message on a queue throws argument out of range execption as expected.</summary>
         [Fact]
-        public void ServiceBusQueueMessenger_LargeMessage()
+        public void Test_ServiceBusQueueMessenger_LargeMessage()
         {
+            // Arrange
             var queueMessenger = GetQueueMessenger("testLargeMessage");
             var testMessage = string.Join(" ", Lorem.GetParagraphs(100));
 
-            // Send the message to initiate receive.
+            // Act/Assert - Send the message to initiate receive.
             Assert.Throws<ArgumentOutOfRangeException>(() => queueMessenger.Send(testMessage).GetAwaiter().GetResult());
         }
 
+        /// <summary>Ensure a message on a topic can be received and completed as expected.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_ReceiveComplete()
+        public void Test_ServiceBusTopicMessenger_ReceiveComplete()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testReceiveComplete", "testSub");
             WaitTimeoutAction(async () =>
             {
                 var testMessage = Lorem.GetSentences(10).ToList();
 
-                // Send the message to initiate receive.
+                // Act - Send the message to initiate receive.
                 await topicMessenger.SendBatch(testMessage, (msgBody) =>
-            {
-                return new[] {
-                            new KeyValuePair<string, object>("a", "b")
-                            };
-            }, 5);
+                    {
+                        return new[] {
+                                    new KeyValuePair<string, object>("a", "b")
+                                    };
+                    }, 5);
 
                 Thread.Sleep(2000);
 
@@ -336,6 +359,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                     props.Count.Should().BeGreaterThan(0);
                 }, err =>
                 {
+                    // Assert
                     Assert.True(false, err.Message);
                     _stopTimeout = true;
                     topicMessenger.CancelReceive<string>();
@@ -343,21 +367,23 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             });
         }
 
+        /// <summary>Ensure an observable batch of messages on a topic can be received and completed as expected.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_ReceiveObservableBatch()
+        public void Test_ServiceBusTopicMessenger_ReceiveObservableBatch()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testObservableBatch", "testSub");
             WaitTimeoutAction(async () =>
             {
                 var testMessage = Lorem.GetSentences(100).ToList();
 
-                // Send the message to initiate receive.
+                // Act - Send the message to initiate receive.
                 await topicMessenger.SendBatch(testMessage, (msgBody) =>
-            {
-                return new[] {
-                            new KeyValuePair<string, object>("a", "b")
-                            };
-            }, 5);
+                    {
+                        return new[] {
+                                    new KeyValuePair<string, object>("a", "b")
+                                    };
+                    }, 5);
 
                 var counter = 0;
 
@@ -378,6 +404,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                    },
                         err =>
                         {
+                            // Assert
                             Assert.True(false, err.Message);
                             _stopTimeout = true;
                         });
@@ -387,15 +414,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             });
         }
 
+        /// <summary>Ensure a message on a queue can be received and completed as expected.</summary>
         [Fact]
-        public void ServiceBusQueueMessenger_ReceiveComplete()
+        public void Test_ServiceBusQueueMessenger_ReceiveComplete()
         {
+            // Arrange
             var queueMessenger = GetQueueMessenger("testReceiveCompleteQueue");
             WaitTimeoutAction(async () =>
             {
                 var testMessage = Lorem.GetSentence();
 
-                // Send the message to initiate receive.
+                // Act - Send the message to initiate receive.
                 await queueMessenger.Send(testMessage);
 
                 Thread.Sleep(2000);
@@ -407,6 +436,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                     queueMessenger.CancelReceive<string>();
                 }, err =>
                 {
+                    // Assert
                     Assert.True(false, err.Message);
                     _stopTimeout = true;
                     queueMessenger.CancelReceive<string>();
@@ -414,15 +444,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             });
         }
 
+        /// <summary>Ensure completing a message on a topic when received from an observable, works as expected.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_ReceiveObservableComplete()
+        public void Test_ServiceBusTopicMessenger_ReceiveObservableComplete()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testObservableComplete", "testSub");
             WaitTimeoutAction(async () =>
             {
                 var testMessage = Lorem.GetSentence();
 
-                // Send the message to initiate receive.
+                // Act - Send the message to initiate receive.
                 await topicMessenger.Send(testMessage);
 
                 Thread.Sleep(2000);
@@ -435,6 +467,8 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                     topicMessenger.CancelReceive<string>();
                 }, err =>
                 {
+                    // Assert
+                    Assert.True(false, err.Message);
                     topicMessenger.CancelReceive<string>();
                     _stopTimeout = true;
                     throw err;
@@ -442,15 +476,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             });
         }
 
+        /// <summary>Ensure completing a message on a queue when received from an observable, works as expected.</summary>
         [Fact]
-        public void ServiceBusQueueMessenger_ReceiveObservableComplete()
+        public void Test_ServiceBusQueueMessenger_ReceiveObservableComplete()
         {
+            // Arrange
             var queueMessenger = GetQueueMessenger("testObservableCompleteQueue");
             WaitTimeoutAction(async () =>
             {
                 var testMessage = Lorem.GetSentence();
 
-                // Send the message to initiate receive.
+                // Act - Send the message to initiate receive.
                 await queueMessenger.Send(testMessage);
 
                 Thread.Sleep(2000);
@@ -463,6 +499,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                     queueMessenger.CancelReceive<string>();
                 }, err =>
                 {
+                    // Assert
                     Assert.True(false, err.Message);
                     queueMessenger.CancelReceive<string>();
                     _stopTimeout = true;
@@ -470,15 +507,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             });
         }
 
+        /// <summary>Ensure erroring a message on a topic works as expected.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_ReceiveError()
+        public void Test_ServiceBusTopicMessenger_ReceiveError()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testReceiveError", "testSub");
             WaitTimeoutAction(async () =>
             {
                 var testMessage = Lorem.GetSentence();
 
-                // Send the message to initiate receive.
+                // Act - Send the message to initiate receive.
                 await topicMessenger.Send(testMessage);
 
                 Thread.Sleep(2000);
@@ -490,6 +529,8 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                     topicMessenger.CancelReceive<string>();
                 }, err =>
                 {
+                    // Assert
+                    Assert.True(false, err.Message);
                     topicMessenger.CancelReceive<string>();
                     _stopTimeout = true;
                     throw err;
@@ -497,15 +538,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             });
         }
 
+        /// <summary>Ensure erroring a message on a queue works as expected.</summary>
         [Fact]
-        public void ServiceBusQueueMessenger_ReceiveError()
+        public void Test_ServiceBusQueueMessenger_ReceiveError()
         {
+            // Arrange
             var queueMessenger = GetQueueMessenger("testReceiveErrorQueue");
             WaitTimeoutAction(async () =>
             {
                 var testMessage = Lorem.GetSentence();
 
-                // Send the message to initiate receive.
+                // Act - Send the message to initiate receive.
                 await queueMessenger.Send(testMessage);
 
                 Thread.Sleep(2000);
@@ -517,6 +560,8 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                     queueMessenger.CancelReceive<string>();
                 }, err =>
                 {
+                    // Assert
+                    Assert.True(false, err.Message);
                     queueMessenger.CancelReceive<string>();
                     _stopTimeout = true;
                     throw err;
@@ -524,15 +569,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             });
         }
 
+        /// <summary>Ensure abandoning a message on a topic works as expected.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_ReceiveAbandon()
+        public void Test_ServiceBusTopicMessenger_ReceiveAbandon()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testReceiveAbandon", "testSub");
             WaitTimeoutAction(async () =>
             {
                 var testMessage = Lorem.GetSentence();
 
-                // Send the message to initiate receive.
+                // Act - Send the message to initiate receive.
                 await topicMessenger.Send(testMessage);
 
                 Thread.Sleep(2000);
@@ -544,6 +591,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                     topicMessenger.CancelReceive<string>();
                 }, err =>
                 {
+                    // Assert
                     Assert.True(false, err.Message);
                     _stopTimeout = true;
                     topicMessenger.CancelReceive<string>();
@@ -551,15 +599,17 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             });
         }
 
+        /// <summary>Ensure abandoning a message on a queue works as expected.</summary>
         [Fact]
-        public void ServiceBusQueueMessenger_ReceiveAbandon()
+        public void Test_ServiceBusQueueMessenger_ReceiveAbandon()
         {
+            // Arrange
             var queueMessenger = GetQueueMessenger("testReceiveAbandonQueue");
             WaitTimeoutAction(async () =>
             {
                 var testMessage = Lorem.GetSentence();
 
-                // Send the message to initiate receive.
+                // Act - Send the message to initiate receive.
                 await queueMessenger.Send(testMessage);
 
                 Thread.Sleep(2000);
@@ -571,6 +621,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                     queueMessenger.CancelReceive<string>();
                 }, err =>
                 {
+                    // Assert
                     Assert.True(false, err.Message);
                     _stopTimeout = true;
                     queueMessenger.CancelReceive<string>();
@@ -578,62 +629,84 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             });
         }
 
+        /// <summary>Ensure sending a batch of messages to a topic works as expected.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_SendBatch()
+        public void Test_ServiceBusTopicMessenger_SendBatch()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testSendBatchTopic", "testSub");
             var messages = new List<string>();
             messages.AddRange(Lorem.GetParagraphs());
+
+            // Act/Assert
             AssertExtensions.DoesNotThrow(async () => await topicMessenger.SendBatch(messages));
         }
 
+        /// <summary>Ensure sending a batch of messages to a queue works as expected.</summary>
         [Fact]
-        public void ServiceBusQueueMessenger_SendBatch()
+        public void Test_ServiceBusQueueMessenger_SendBatch()
         {
+            // Arrange
             var queueMessenger = GetQueueMessenger("testSendBatchQueue");
             var messages = new List<string>();
             messages.AddRange(Lorem.GetParagraphs());
+
+            // Act/Assert
             AssertExtensions.DoesNotThrow(async () => await queueMessenger.SendBatch(messages));
         }
 
+        /// <summary>Ensure sending a batch of messages to a topic with properties works as expected.</summary>
         [Fact]
-        public void ServiceBusTopicMessenger_SendBatchWithProperties()
+        public void Test_ServiceBusTopicMessenger_SendBatchWithProperties()
         {
+            // Arrange
             var topicMessenger = GetTopicMessenger("testSendPropsBatchTopic", "testSub");
             var messages = new List<string>();
             var properties = new KeyValuePair<string, object>[1];
             properties[0] = new KeyValuePair<string, object>("TestProperties", "Test");
             messages.AddRange(Lorem.GetParagraphs());
+
+            // Act/Assert
             AssertExtensions.DoesNotThrow(async () => await topicMessenger.SendBatch(messages, properties));
         }
 
+        /// <summary>Ensure an error is thrown during receiver setup when expected.</summary>
         [Fact]
         public async System.Threading.Tasks.Task ServiceBusTopicMessenger_ReceiveSetupError()
         {
+            // Arrange
             var config = new ConfigurationBuilder().AddJsonFile("appSettings.json").Build();
             var testMessenger = new ServiceBusMessenger(new ConnectionConfig()
             {
                 ConnectionString = config.GetValue<string>("ConnectionString"),
             });
 
+            // Act/Assert
             Assert.Throws<InvalidOperationException>(() => testMessenger.Receive<string>((msg) => { }, (err) => { }));
             Assert.Null(testMessenger.ReceiveOne<string>());
             await Assert.ThrowsAsync<NullReferenceException>(() => testMessenger.Send("test"));
         }
 
+        /// <summary>Ensure sending a batch of messages to a queue with properties works as expected.</summary>
         [Fact]
-        public void ServiceBusQueueMessenger_SendBatchWithProperties()
+        public void Test_ServiceBusQueueMessenger_SendBatchWithProperties()
         {
+            // Arrannge
             var topicMessenger = GetTopicMessenger("testSendMorePropsBatchTopic", "testSub");
             var messages = new List<string>();
             var properties = new KeyValuePair<string, object>[1];
             properties[0] = new KeyValuePair<string, object>("TestProperties", "Test");
+
+            // Act
             messages.AddRange(Lorem.GetParagraphs());
+
+            // Assert
             AssertExtensions.DoesNotThrow(async () => await topicMessenger.SendBatch(messages, properties));
         }
 
+        /// <summary>Ensure the receiver can be updated with different receiver info.</summary>
         [Fact]
-        public void ServiceBusQueueMessenger_UpdateReceiverChangesSubscription()
+        public void Test_ServiceBusQueueMessenger_UpdateReceiverChangesSubscription()
         {
             // Arrange
             var topicOne = GetTopicMessenger("updatereceiverreceiverone", "subone");
@@ -642,10 +715,10 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             ((ServiceBusManager)topicOne.EntityManager).EntityFullPurge("updatereceiverreceiverone", true).GetAwaiter().GetResult();
             ((ServiceBusManager)topicTwo.EntityManager).EntityFullPurge("updatereceiverreceivertwo", true).GetAwaiter().GetResult();
 
-            // Act and Assert
             var testMessageOne = "Message One";
             var testMessageTwo = "Message Two";
 
+            // Act/Assert
             // Send the message to initiate receive.
             topicOne.Send(testMessageOne).GetAwaiter().GetResult();
             topicTwo.Send(testMessageTwo).GetAwaiter().GetResult();
@@ -691,8 +764,9 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             testMessenger.Complete(receivedMessageTwo).GetAwaiter().GetResult();
         }
 
+        /// <summary>Ensure the receiver can be updated with different receiver info, moving from topic to queue.</summary>
         [Fact]
-        public void ServiceBusQueueMessenger_UpdateReceiverChangesSubscriptionWithDifferentType()
+        public void Test_ServiceBusQueueMessenger_UpdateReceiverChangesSubscriptionWithDifferentType()
         {
             // Arrange
             var topicOne = GetTopicMessenger("updatereceiverreceiverone1", "subone1");
@@ -701,10 +775,10 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             ((ServiceBusManager)topicOne.EntityManager).EntityFullPurge("updatereceiverreceiverone1", true).GetAwaiter().GetResult();
             ((ServiceBusManager)topicTwo.EntityManager).EntityFullPurge("updatereceiverreceivertwo2", true).GetAwaiter().GetResult();
 
-            // Act and Assert
             var testMessageOne = "Message One";
             var testMessageTwo = new TestProps() { Test1 = 2, Test2 = true, Version = "new" };
 
+            // Act/Assert
             // Send the message to initiate receive.
             topicOne.Send(testMessageOne).GetAwaiter().GetResult();
             topicTwo.Send(testMessageTwo).GetAwaiter().GetResult();
@@ -874,6 +948,5 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                 return false;
             }
         }
-
     }
 }
