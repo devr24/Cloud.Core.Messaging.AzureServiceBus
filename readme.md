@@ -3,8 +3,7 @@
 
 <div id="description">
 
-A lightweight adapter for Azure Service Bus (Queues and Topics), that abstracts consuming applications from the Service Bus technology stack by 
-implementing common messaging interfaces.
+Azure Service Bus (Queues and Topics) implementation of the messaging interfaces provided in Cloud.Core.  Abstracts queue and topic subscriptions and management.
 
 </div>
 
