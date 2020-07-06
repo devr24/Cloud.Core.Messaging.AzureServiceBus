@@ -19,16 +19,16 @@
 		  Full API Documentation can be found here:
 		  https://cloud1core.blob.core.windows.net/docs/Cloud.Core.Messaging.AzureServiceBus/api/index.html
 	</PackageReleaseNotes>
-	<PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
 	<PackageProjectUrl>https://dev.azure.com/cloudcoreproject/CloudCore/</PackageProjectUrl>
 	<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cloud.Core" Version="3.1.3592.599" />
+    <PackageReference Include="Cloud.Core" Version="3.1.3593.616" />
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.33.0" />
     <PackageReference Include="Microsoft.Azure.ServiceBus" Version="4.1.3" />
-    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.7" />
+    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.8" />
     <PackageReference Include="System.Reactive.Core" Version="4.4.1" />
     <PackageReference Include="System.Reactive.Linq" Version="4.4.1" />
   </ItemGroup>

@@ -253,3 +253,9 @@ paket-files/
 /src/Tests/coverage.json
 /src/Tests/coverage.opencover.xml
 Cloud.Core*.xml
+
+# docfx - Api documentation
+docfx_project/
+/logo.svg
+/favicon.ico
+
