@@ -46,14 +46,14 @@
         /// <param name="manager">The manager.</param>
         /// <param name="topicName">Name of the topic.</param>
         /// <param name="subscriptionName">Name of the subscription.</param>
-        /// <param name="sqlFilter">The SQL filter.</param>
+        /// <param name="filter">The SQL filter.</param>
         /// <returns><see cref="TopicDescription"/> Topic description.</returns>
-        public static TopicDescription CreateTopicIfNotExists(this ManagementClient manager, string topicName, string subscriptionName, KeyValuePair<string, string>? sqlFilter)
+        public static TopicDescription CreateTopicIfNotExists(this ManagementClient manager, string topicName, string subscriptionName, KeyValuePair<string, string>? filter)
         {
             var filters = new List<KeyValuePair<string, string>>();
-            if (sqlFilter.HasValue)
+            if (filter.HasValue)
             {
-                filters.Add(sqlFilter.Value);
+                filters.Add(filter.Value);
             }
 
             // Create topic, subscriptions and filter if not exists.
@@ -66,9 +66,9 @@
         /// <param name="manager">The manager.</param>
         /// <param name="topicName">Name of the topic.</param>
         /// <param name="subscriptionName">Name of the subscription.</param>
-        /// <param name="sqlFilters">The SQL filters to apply.</param>
+        /// <param name="filters">The SQL filters to apply.</param>
         /// <returns><see cref="TopicDescription"/> Topic description.</returns>
-        public static TopicDescription CreateTopicIfNotExists(this ManagementClient manager, string topicName, string subscriptionName, List<KeyValuePair<string, string>> sqlFilters)
+        public static TopicDescription CreateTopicIfNotExists(this ManagementClient manager, string topicName, string subscriptionName, List<KeyValuePair<string, string>> filters)
         {
             lock (CreationLock)
             {
@@ -82,10 +82,10 @@
                 }
 
                 // Setup Subscription Filter (if not exists).
-                if (!sqlFilters.IsNullOrDefault() && sqlFilters.Count > 0)
+                if (!filters.IsNullOrDefault() && filters.Count > 0)
                 {
                     // Apply each filter.
-                    foreach (var filter in sqlFilters)
+                    foreach (var filter in filters)
                     {
                         EnsureSubscriptionFilter(manager, topicName, subscriptionName, filter).GetAwaiter().GetResult();
                     }
