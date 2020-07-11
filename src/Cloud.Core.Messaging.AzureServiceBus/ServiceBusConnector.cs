@@ -468,6 +468,62 @@
         }
 
         /// <summary>
+        /// Read a batch of messages synchronously.
+        /// </summary>
+        /// <returns>Async task.</returns>
+        internal async Task<List<IMessageEntity<T>>> ReadBatch(int batchSize)
+        {
+            try
+            {
+                Receiver.PrefetchCount = 0;
+
+                // Get a single message from the receiver entity.
+                var messages = await Receiver.ReceiveAsync(1, TimeSpan.FromSeconds(5));
+
+                if (messages == null)
+                {
+                    // If we have null returned, double check we aren't getting null when there are
+                    // actually items on the entity - BUG FIX FOR SB.
+                    if (BrokenReceiverCheck())
+                        messages = await Receiver.ReceiveAsync(batchSize, TimeSpan.FromSeconds(10));
+
+                    if (messages == null)
+                        return null;
+                }
+
+                var typedMessages = new List<IMessageEntity<T>>();
+
+                foreach (var m in messages)
+                {
+                    // Convert the message body to generic type objet.
+                    var messageBody = GetTypedMessageContent(m);
+                    if (messageBody != null)
+                    {
+                        // If we do not already have this message in processing AND we can
+                        // successfully lock the message, then it can be returned from this wrapper.
+                        if (Messages.TryAdd(messageBody, m) &&
+                            await Lock(m, messageBody))
+                        {
+                            typedMessages.Add(new MessageEntity<T>() { Body = messageBody, Properties = m.UserProperties });
+                        }
+                    }
+                }
+
+                return typedMessages;
+            }
+            catch (InvalidOperationException iex)
+            {
+                Logger?.LogError(iex, "Error during read of service bus message");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError(e, "Error during read of service bus message");
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Read a single message.
         /// </summary>
         /// <returns>Async task.</returns>
