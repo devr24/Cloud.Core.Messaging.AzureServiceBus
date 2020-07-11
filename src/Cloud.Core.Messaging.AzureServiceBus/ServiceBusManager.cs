@@ -74,13 +74,13 @@
             InstanceName = instanceInfo.Name;
             IsPremiumTier = instanceInfo.MessagingSku == MessagingSku.Premium;
             EnableAutoBackOff = _entityConfig.EnableAutobackOff;
-
+            
             if (_entityConfig.Receiver != null)
             {
                 ReceiverInfo = _entityConfig.Receiver.GetBase();
                 await SetAdditionalReceiverInfo();
             }
-
+            
             if (_entityConfig.Sender != null)
             {
                 SenderInfo = _entityConfig.Sender.GetBase();

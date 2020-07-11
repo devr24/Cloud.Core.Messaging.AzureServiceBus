@@ -299,7 +299,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             var loopCounter = 0;
             var batchSize = 10;
             var messageCount = 55;
-            var queueMessenger = GetQueueMessenger("testReceiveOneQueue");
+            var queueMessenger = GetQueueMessenger("batchEntityQueueMessenger");
             await CreateStringTestMessages(queueMessenger, messageCount);
 
             // Act - Send the message to initiate receive.
@@ -323,14 +323,14 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
         /// <summary>Ensure receiving a batch of entity messages from a queue works as expected.</summary>
         [Fact]
-        public async Task Test_ServiceBusQueueMessenger_ReceiveBatchEntity()
+        public void Test_ServiceBusQueueMessenger_ReceiveBatchEntity()
         {
             // Arrange
             var loopCounter = 0;
             var batchSize = 10;
             var messageCount = 55;
-            var queueMessenger = GetQueueMessenger("testReceiveOneQueue");
-            await CreateStringTestMessages(queueMessenger, messageCount);
+            var queueMessenger = GetQueueMessenger("batchQueueMessenger");
+            CreateStringTestMessages(queueMessenger, messageCount).GetAwaiter().GetResult();
 
             // Act - Send the message to initiate receive.
             Thread.Sleep(10000);
@@ -342,7 +342,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
                 foreach (var msg in messages)
                 {
-                    await queueMessenger.Complete(msg.Body);
+                    queueMessenger.Complete(msg.Body).GetAwaiter().GetResult();
                 }
 
                 loopCounter += 10;
