@@ -948,6 +948,35 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             finished?.Invoke();
         }
 
+        private void RemoveEntities()
+        {
+            var manager = GetEntityManagerInstance();
+            var entityTopics = new[]
+            {
+                "testCountTopic", "testReadPropertiesTyped", "testReceiveOne",
+                "testReceiveOneTyped", "testCompleteMany", "testReceiveComplete",
+                "testObservableBatch", "testObservableComplete", "testReceiveError",
+                "testReceiveAbandon", "testSendBatchTopic", "testSendPropsBatchTopic", "updatereceiverreceivertwo", "updatereceiverreceiverone"
+                "testSendMorePropsBatchTopic", "testReceiver", "updatereceiverreceivertwo2", "updatereceiverreceiverone1"
+            };
+            var entityQueues = new[]
+            {
+                "testCountQueue", "testReceiveOneQueue", "testLargeMessage","batchEntityQueueMessenger","batchQueueMessenger",
+                "testReceiveErrorQueue", "testSendBatchQueue", "testreceiveabandonqueue",
+                "testreceivecompletequeue", "testqueue", "testobservablecompletequeue",
+            };
+
+            foreach (var entity in entityTopics)
+            {
+                manager.DeleteEntity(EntityType.Topic, entity).GetAwaiter().GetResult();
+            }
+
+            foreach (var entity in entityQueues)
+            {
+                manager.DeleteEntity(EntityType.Queue, entity).GetAwaiter().GetResult();
+            }
+        }
+
         private class TestProps : IEquatable<TestProps>
         {
             public int Test1 { get; set; }
@@ -980,7 +1009,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                 if (disposing)
                 {
                     // Clear down all queues/topics before starting.
-                    GetEntityManagerInstance().ScotchNamespace().GetAwaiter().GetResult();
+                    RemoveEntities();
                 }
 
                 disposedValue = true;
