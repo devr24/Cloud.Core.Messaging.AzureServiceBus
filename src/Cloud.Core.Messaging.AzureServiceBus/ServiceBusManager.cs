@@ -229,7 +229,11 @@
         /// <returns>Task.</returns>
         public async Task DeleteEntity(string entityName)
         {
-            await ManagerClient.DeleteTopicIfExists(entityName);
+            var isTopic = await ManagerClient.IsTopic(entityName);
+            if (isTopic)
+                await ManagerClient.DeleteTopicIfExists(entityName);
+            else
+                await ManagerClient.DeleteQueueIfExists(entityName);
         }
 
         /// <summary>

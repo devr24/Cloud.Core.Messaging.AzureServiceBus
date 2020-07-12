@@ -63,6 +63,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             var updatedReceiverCount = (queueMessenger.EntityManager.GetReceiverMessageCount().GetAwaiter().GetResult()).ActiveEntityCount;
             var senderTargetCount = (queueMessenger.EntityManager.GetSenderMessageCount().GetAwaiter().GetResult()).ActiveEntityCount;
             var verifyCount = manager.EntityCount(tableName).GetAwaiter().GetResult();
+            manager.DeleteEntity(tableName).GetAwaiter().GetResult();
 
             // Assert.
             var entity = manager.GetEntity(tableName).GetAwaiter().GetResult();
