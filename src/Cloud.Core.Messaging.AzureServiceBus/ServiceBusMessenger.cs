@@ -666,9 +666,7 @@
         /// <returns></returns>
         public async Task UpdateReceiver(string entityName, string entitySubscriptionName = null, bool createIfNotExists = false, KeyValuePair<string, string>? entityFilter = null, bool supportStringBodyType = false)
         {
-            var sbEntityManager = EntityManager as ServiceBusManager;
-
-            if (sbEntityManager == null)
+            if (!(EntityManager is ServiceBusManager))
             {
                 throw new InvalidOperationException("Service Bus Messenger Client was not using a ServiceBusManager as it's EntityManager");
             }

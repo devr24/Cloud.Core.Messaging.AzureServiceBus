@@ -284,7 +284,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             var connectionConfig = new ConnectionConfig();
             var spConfig = new ServicePrincipleConfig() { SharedAccessPolicyName = "TestPolicy", InstanceName = "testSBInstance", AppId = "TestAppId", AppSecret = "TestAppSecret", TenantId = "TestTenantId", SubscriptionId = "FakeSubscriptionId" };
             var serviceBus = new ServiceBusMessenger(spConfig);
-            var sharedAccessConfig = new SignedAccessConfig(new List<AccessPermission> { AccessPermission.Read }, DateTimeOffset.UtcNow.AddDays(1));
+            ISignedAccessConfig sharedAccessConfig = null;
 
             // Assert
             serviceBus.ToString().Should().NotBeNullOrEmpty();
