@@ -717,7 +717,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
         /// <summary>Ensure an error is thrown during receiver setup when expected.</summary>
         [Fact]
-        public async System.Threading.Tasks.Task ServiceBusTopicMessenger_ReceiveSetupError()
+        public async Task ServiceBusTopicMessenger_ReceiveSetupError()
         {
             // Arrange
             var config = new ConfigurationBuilder().AddJsonFile("appSettings.json").Build();
