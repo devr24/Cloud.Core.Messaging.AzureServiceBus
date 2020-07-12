@@ -956,7 +956,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                 "testCountTopic", "testReadPropertiesTyped", "testReceiveOne",
                 "testReceiveOneTyped", "testCompleteMany", "testReceiveComplete",
                 "testObservableBatch", "testObservableComplete", "testReceiveError",
-                "testReceiveAbandon", "testSendBatchTopic", "testSendPropsBatchTopic", "updatereceiverreceivertwo", "updatereceiverreceiverone"
+                "testReceiveAbandon", "testSendBatchTopic", "testSendPropsBatchTopic", "updatereceiverreceivertwo", "updatereceiverreceiverone",
                 "testSendMorePropsBatchTopic", "testReceiver", "updatereceiverreceivertwo2", "updatereceiverreceiverone1"
             };
             var entityQueues = new[]
