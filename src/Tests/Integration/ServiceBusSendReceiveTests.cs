@@ -101,10 +101,9 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         {
             // Arrange
             var topicMessenger = GetTopicMessenger("testReceiveOne", "testSub");
-            var testMessages = Lorem.GetSentence(3);
 
             // Act - Send the message to initiate receive.
-            topicMessenger.Send(testMessages).GetAwaiter().GetResult();
+            CreateStringTestMessages(topicMessenger, 10).GetAwaiter().GetResult();
             Thread.Sleep(2000);
             var receivedMessage = topicMessenger.ReceiveOne<string>();
 
@@ -356,27 +355,16 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         {
             // Arrange
             var queueMessenger = GetQueueMessenger("testReceiveOneQueue");
-            var testMessages = "TestMessage";
-
+            
             // Act - Send the message to initiate receive.
-            queueMessenger.Send(testMessages).GetAwaiter().GetResult();
+            CreateStringTestMessages(queueMessenger, 10).GetAwaiter().GetResult();
             Thread.Sleep(10000);
 
-            var queueMessengerCount = queueMessenger.EntityManager.GetReceiverMessageCount().GetAwaiter().GetResult().ActiveEntityCount;
+            var receivedMessage = queueMessenger.ReceiveOne<string>();
 
-            for (long i = queueMessengerCount; i > 0; i--)
-            {
-                var receivedMessage = queueMessenger.ReceiveOne<string>();
-
-                // Assert
-                Assert.NotNull(receivedMessage);
-                queueMessenger.Complete(receivedMessage).GetAwaiter().GetResult();
-
-                Assert.NotEmpty(receivedMessage);
-            }
-
-            var lastMessage = queueMessenger.ReceiveOne<string>();
-            lastMessage.Should().BeNull();
+            // Assert
+            Assert.NotNull(receivedMessage);
+            queueMessenger.Complete(receivedMessage).GetAwaiter().GetResult();
         }
 
         /// <summary>Ensure a sending a large message on a queue throws argument out of range execption as expected.</summary>
