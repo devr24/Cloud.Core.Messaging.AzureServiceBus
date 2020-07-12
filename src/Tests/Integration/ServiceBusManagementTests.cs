@@ -77,7 +77,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         [InlineData(500)]
         public void Test_ServiceBusTopicEntityManager_ReceiverMessageCount(int numMessagesToSend)
         {
-            const string tableName = "ManagementCountTopic";
+            const string tableName = "ManagementCountTopic1";
 
             // Arrange - Create the queue entity using the manager, that will be used to count messages for.
             var manager = GetEntityManagerInstance();

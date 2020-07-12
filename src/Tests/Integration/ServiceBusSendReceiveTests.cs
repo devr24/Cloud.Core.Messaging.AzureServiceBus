@@ -17,11 +17,10 @@ using Xunit;
 namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 {
     [IsIntegration]
-    public class ServiceBusSendReceiveTests
+    public class ServiceBusSendReceiveTests : IDisposable
     {
         private readonly IConfiguration _config;
         private readonly ILogger _logger;
-        private static bool _hasClearedDown;
         private bool _stopTimeout;
 
         public ServiceBusSendReceiveTests()
@@ -29,9 +28,6 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             _config = new ConfigurationBuilder().AddJsonFile("appSettings.json").Build();
             _logger = new ServiceCollection().AddLogging(builder => builder.AddConsole())
                 .BuildServiceProvider().GetService<ILogger<ServiceBusSendReceiveTests>>();
-
-            // Clear down all queues/topics before starting.
-            RemoveEntities();
         }
 
         /// <summary>Ensure the message entity counts work as expected.</summary>
@@ -301,7 +297,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             CreateStringTestMessages(queueMessenger, messageCount+10).GetAwaiter().GetResult();
 
             // Act - Send the message to initiate receive.
-            Thread.Sleep(10000);
+            Thread.Sleep(2000);
 
             do
             {
@@ -331,7 +327,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             CreateStringTestMessages(queueMessenger, messageCount+10).GetAwaiter().GetResult();
 
             // Act - Send the message to initiate receive.
-            Thread.Sleep(10000);
+            Thread.Sleep(2000);
 
             do
             {
@@ -952,40 +948,6 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             finished?.Invoke();
         }
 
-        private void RemoveEntities()
-        {
-            if (_hasClearedDown)
-                return;
-
-            var manager = GetEntityManagerInstance();
-            var entityTopics = new[]
-            {
-                "testCountTopic", "testReadPropertiesTyped", "testReceiveOne",
-                "testReceiveOneTyped", "testCompleteMany", "testReceiveComplete",
-                "testObservableBatch", "testObservableComplete", "testReceiveError",
-                "testReceiveAbandon", "testSendBatchTopic", "testSendPropsBatchTopic",
-                "testSendMorePropsBatchTopic", "testReceiver"
-            };
-            var entityQueues = new[]
-            {
-                "testCountQueue", "testReceiveOneQueue", "testLargeMessage",
-                "testReceiveErrorQueue", "testSendBatchQueue", "testreceiveabandonqueue",
-                "testreceivecompletequeue", "testqueue", "testobservablecompletequeue",
-            };
-
-            foreach (var entity in entityTopics)
-            {
-                manager.DeleteEntity(EntityType.Topic, entity).GetAwaiter().GetResult();
-            }
-
-            foreach (var entity in entityQueues)
-            {
-                manager.DeleteEntity(EntityType.Queue, entity).GetAwaiter().GetResult();
-            }
-
-            _hasClearedDown = true;
-        }
-
         private class TestProps : IEquatable<TestProps>
         {
             public int Test1 { get; set; }
@@ -1007,5 +969,31 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                 return false;
             }
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // Clear down all queues/topics before starting.
+                    GetEntityManagerInstance().ScotchNamespace().GetAwaiter().GetResult();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

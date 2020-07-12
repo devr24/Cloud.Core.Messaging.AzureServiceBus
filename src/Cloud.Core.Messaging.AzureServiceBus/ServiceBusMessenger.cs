@@ -624,7 +624,7 @@
                 // Authenticate against the management layer.
                 var azureManagement = Azure.Authenticate(client, string.Empty).WithSubscription(subscriptionId);
                 var sbNamespace = (await azureManagement.ServiceBusNamespaces.ListAsync()).FirstOrDefault(s => s.Name == instanceName);
-
+                
                 // If the namespace is not found, throw an exception.
                 if (sbNamespace == null)
                     throw new InvalidOperationException($"Could not find the a service bus instance in the subscription with ID {subscriptionId}");

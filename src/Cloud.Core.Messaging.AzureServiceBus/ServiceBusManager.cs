@@ -309,6 +309,23 @@
                 return await ManagerClient.QueueExistsAsync(entityName);
         }
 
+        /// <summary>Scotches the namespace by deleting all topics and queues.</summary>
+        public async Task ScotchNamespace()
+        {
+            var topics = await ManagerClient.GetTopicsAsync();
+            var queues = await ManagerClient.GetQueuesAsync();
+
+            foreach (var topic in topics)
+            {
+                await ManagerClient.DeleteTopicIfExists(topic.Path);
+            }
+
+            foreach (var queue in queues)
+            {
+                await ManagerClient.DeleteQueueIfExists(queue.Path);
+            }
+        }
+
         #endregion
 
         /// <summary>
