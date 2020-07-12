@@ -34,9 +34,9 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
         /// <summary>Ensure receiver/sender queue count is updated accurately after sending messages.</summary>
         [Theory]
+        [InlineData(50)]
         [InlineData(100)]
         [InlineData(200)]
-        [InlineData(500)]
         public void Test_ServiceBusQueueEntityManager_ReceiverMessageCount(int numMessagesToSend)
         {
             const string tableName = "ManagementCountQueue";
@@ -63,14 +63,14 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             var updatedReceiverCount = (queueMessenger.EntityManager.GetReceiverMessageCount().GetAwaiter().GetResult()).ActiveEntityCount;
             var senderTargetCount = (queueMessenger.EntityManager.GetSenderMessageCount().GetAwaiter().GetResult()).ActiveEntityCount;
             var verifyCount = manager.EntityCount(tableName).GetAwaiter().GetResult();
-            manager.DeleteEntity(tableName).GetAwaiter().GetResult();
 
             // Assert.
             var entity = manager.GetEntity(tableName).GetAwaiter().GetResult();
             entity.EntityName.Should().Be(queueMessenger.ConnectionManager.ReceiverInfo.EntityName);
+            manager.DeleteEntity(tableName).GetAwaiter().GetResult();
             _ = updatedReceiverCount.Should().Be(expectedCount);
             _ = senderTargetCount.Should().Be(expectedCount);
-            verifyCount.Should().Be(updatedReceiverCount);
+            verifyCount.ActiveEntityCount.Should().Be(updatedReceiverCount);
         }
 
         /// <summary>Ensure receiver/sender topic count is updated accurately after sending messages.</summary>
