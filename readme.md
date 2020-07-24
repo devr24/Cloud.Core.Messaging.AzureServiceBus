@@ -249,7 +249,7 @@ msn.SendBatch(new List<TestMessage> {
   new TestMessage{ Name = "Some Name 3", Stuff = "Some Stuff 2"  }
 });
 ```
-If you set `.ConfigureAwait(false)` the code will continue in a synchronous manner, without awaitng for the task to complete.
+
 
 ### Entity Disabled Exception
 If you try to send messages to a queue or topic (or topic subscription) that is disabled, the `Send` code will throw an Cloud.Core.Messenger.EntityDisabledException that you can specifically catch and handle in your code. 
