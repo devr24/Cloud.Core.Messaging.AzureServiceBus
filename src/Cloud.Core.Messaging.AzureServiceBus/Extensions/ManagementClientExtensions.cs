@@ -135,6 +135,11 @@
                     // Set the max queue size - allowed values: 1024;2048;3072;4096;5120;8192000;
                     // Our premium SB instances should all be 80gb (819200mb), otherwise 5gb (5120mb).
                     queue.MaxSizeInMB = (instanceInfo.MessagingSku == MessagingSku.Premium ? 8192000 : 5120);
+
+                    // Add duplicate detection.
+                    queue.RequiresDuplicateDetection = true;
+                    queue.DuplicateDetectionHistoryTimeWindow = TimeSpan.FromSeconds(60); // default to 60 seconds for now.
+
                     manager.UpdateQueueAsync(queue).GetAwaiter().GetResult();
                 }
 
@@ -281,7 +286,7 @@
             }
             catch (Exception)
             {
-                // Do nothing if queue didnt exist.
+                // Do nothing if queue didn't exist.
                 return false;
             }
         }
@@ -480,6 +485,11 @@
                 // Set the max topic size - allowed values: 1024;2048;3072;4096;5120;8192000;
                 // Our premium SB instances should all be 80gb (819200mb), otherwise 5gb (5120mb).
                 topic.MaxSizeInMB = (instanceInfo.MessagingSku == MessagingSku.Premium ? 8192000 : 5120);
+                
+                // Add duplicate detection.
+                topic.RequiresDuplicateDetection = true;
+                topic.DuplicateDetectionHistoryTimeWindow = TimeSpan.FromSeconds(60); // default to 60 seconds for now.
+
                 await manager.UpdateTopicAsync(topic);
             }
 
@@ -612,7 +622,7 @@
             }
             catch (Exception)
             {
-                // Do nothing here, we couldnt find the queue either.  Will fall down to return null.
+                // Do nothing here, we couldn't find the queue either.  Will fall down to return null.
             }
 
             return null;
@@ -629,7 +639,7 @@
             try
             {
                 var result = await manager.GetTopicAsync(entityName);
-                return result == null ? false : true;
+                return result != null;
             }
             catch (Exception)
             {

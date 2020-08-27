@@ -261,6 +261,11 @@
                 foreach (var prop in properties)
                 {
                     message.UserProperties.AddOrUpdate(prop);
+
+                    if (prop.Key.Equals("id", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        message.MessageId = prop.Value.ToString();
+                    }
                 }
             }
 
