@@ -129,18 +129,21 @@
                         // do nothing in this case as topic does not exist (and its ok to create a queue with this name).
                     }
 
+
+                    // Has failed as the topic does not exist, therefore, create!
                     var instanceInfo = manager.GetNamespaceInfoAsync().GetAwaiter().GetResult();
-                    queue = manager.CreateQueueAsync(queueName).GetAwaiter().GetResult();
+                    var queueDesc = new QueueDescription(queueName)
+                    {
+                        // Add duplicate detection.
+                        RequiresDuplicateDetection = true,
+                        DuplicateDetectionHistoryTimeWindow = TimeSpan.FromMinutes(60),
 
-                    // Set the max queue size - allowed values: 1024;2048;3072;4096;5120;8192000;
-                    // Our premium SB instances should all be 80gb (819200mb), otherwise 5gb (5120mb).
-                    queue.MaxSizeInMB = (instanceInfo.MessagingSku == MessagingSku.Premium ? 8192000 : 5120);
+                        // Set the max topic size - allowed values: 1024;2048;3072;4096;5120;8192000;
+                        // Our premium SB instances should all be 80gb (819200mb), otherwise 5gb (5120mb).
+                        MaxSizeInMB = (instanceInfo.MessagingSku == MessagingSku.Premium ? 8192000 : 5120)
+                    };
 
-                    // Add duplicate detection.
-                    queue.RequiresDuplicateDetection = true;
-                    queue.DuplicateDetectionHistoryTimeWindow = TimeSpan.FromSeconds(60); // default to 60 seconds for now.
-
-                    manager.UpdateQueueAsync(queue).GetAwaiter().GetResult();
+                    queue = manager.CreateQueueAsync(queueDesc).GetAwaiter().GetResult();
                 }
 
                 return queue;
@@ -480,17 +483,18 @@
 
                 // Has failed as the topic does not exist, therefore, create!
                 var instanceInfo = await manager.GetNamespaceInfoAsync();
-                topic = await manager.CreateTopicAsync(topicName);
+                var topicDesc = new TopicDescription(topicName)
+                {
+                    // Add duplicate detection.
+                    RequiresDuplicateDetection = true, 
+                    DuplicateDetectionHistoryTimeWindow = TimeSpan.FromMinutes(60),
 
-                // Set the max topic size - allowed values: 1024;2048;3072;4096;5120;8192000;
-                // Our premium SB instances should all be 80gb (819200mb), otherwise 5gb (5120mb).
-                topic.MaxSizeInMB = (instanceInfo.MessagingSku == MessagingSku.Premium ? 8192000 : 5120);
-                
-                // Add duplicate detection.
-                topic.RequiresDuplicateDetection = true;
-                topic.DuplicateDetectionHistoryTimeWindow = TimeSpan.FromSeconds(60); // default to 60 seconds for now.
+                    // Set the max topic size - allowed values: 1024;2048;3072;4096;5120;8192000;
+                    // Our premium SB instances should all be 80gb (819200mb), otherwise 5gb (5120mb).
+                    MaxSizeInMB = (instanceInfo.MessagingSku == MessagingSku.Premium ? 8192000 : 5120)
+                };
 
-                await manager.UpdateTopicAsync(topic);
+                topic = await manager.CreateTopicAsync(topicDesc);
             }
 
             return topic;
