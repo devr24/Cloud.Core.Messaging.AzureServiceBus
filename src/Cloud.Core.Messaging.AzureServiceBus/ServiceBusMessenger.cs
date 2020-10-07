@@ -388,6 +388,25 @@
         }
 
         /// <summary>
+        /// Read system message properties for the passed message.
+        /// </summary>
+        /// <typeparam name="T">Type of message body.</typeparam>
+        /// <param name="msg">Message body, used to identify actual Service Bus message.</param>
+        /// <returns>IDictionary&lt;System.String, System.Object&gt;.</returns>
+        public IDictionary<string, object> ReadSystemProperties<T>(T msg) where T : class
+        {
+            if (!QueueConnectors.ContainsKey(typeof(T)))
+            {
+                SetupConnectorType<T>();
+            }
+
+            var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
+
+            // Read properties.
+            return queue.ReadSystemProperties(msg);
+        }
+
+        /// <summary>
         /// Gets the queue adapter for the type T if it exists.
         /// </summary>
         /// <typeparam name="T">Type of adapter.</typeparam>
@@ -463,6 +482,77 @@
         public async Task Abandon<T>(T message) where T : class
         {
             await GetQueueAdapterIfExists<T>().Abandon(message).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Abandons the specified message.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message">The message.</param>
+        /// <param name="propertiesToModify"></param>
+        /// <returns>Task.</returns>
+        public async Task Abandon<T>(T message, KeyValuePair<string, object>[] propertiesToModify) where T : class
+        {
+            await GetQueueAdapterIfExists<T>().Abandon(message, propertiesToModify).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Defers the specified message.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message">The message.</param>
+        /// <returns>Task.</returns>
+        public async Task Defer<T>(T message) where T : class
+        {
+            await GetQueueAdapterIfExists<T>().Defer(message).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Defers the specified message.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>    
+        /// <param name="message">The message.</param>
+        /// <param name="propertiesToModify"></param>
+        /// <returns>Task.</returns>
+        public async Task Defer<T>(T message, KeyValuePair<string, object>[] propertiesToModify) where T : class
+        {
+            await GetQueueAdapterIfExists<T>().Defer(message, propertiesToModify).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="sequenceNumbers"></param>
+        /// <returns></returns>
+        public async Task<List<T>> ReceiveDeferredBatch<T>(IEnumerable<long> sequenceNumbers) where T : class
+        {
+            // Setup the queue adapter if it doesn't exist.
+            if (!QueueConnectors.ContainsKey(typeof(T)))
+            {
+                SetupConnectorType<T>();
+            }
+
+            var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
+
+            // Start ready for this type.
+            var deferrals = await queue.ReceiveDeferred(sequenceNumbers);
+
+            return deferrals.Select(m => m.Body).ToList();
+        }
+
+        public async Task<List<IMessageEntity<T>>> ReceiveDeferredBatchEntity<T>(IEnumerable<long> sequenceNumbers) where T : class
+        {
+            // Setup the queue adapter if it doesn't exist.
+            if (!QueueConnectors.ContainsKey(typeof(T)))
+            {
+                SetupConnectorType<T>();
+            }
+
+            var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
+
+            // Start ready for this type.
+            return await queue.ReceiveDeferred(sequenceNumbers);
         }
 
         /// <summary>
