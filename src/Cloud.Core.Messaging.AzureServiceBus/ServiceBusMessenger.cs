@@ -388,25 +388,6 @@
         }
 
         /// <summary>
-        /// Read system message properties for the passed message.
-        /// </summary>
-        /// <typeparam name="T">Type of message body.</typeparam>
-        /// <param name="msg">Message body, used to identify actual Service Bus message.</param>
-        /// <returns>IDictionary&lt;System.String, System.Object&gt;.</returns>
-        public IDictionary<string, object> ReadSystemProperties<T>(T msg) where T : class
-        {
-            if (!QueueConnectors.ContainsKey(typeof(T)))
-            {
-                SetupConnectorType<T>();
-            }
-
-            var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
-
-            // Read properties.
-            return queue.ReadSystemProperties(msg);
-        }
-
-        /// <summary>
         /// Gets the queue adapter for the type T if it exists.
         /// </summary>
         /// <typeparam name="T">Type of adapter.</typeparam>

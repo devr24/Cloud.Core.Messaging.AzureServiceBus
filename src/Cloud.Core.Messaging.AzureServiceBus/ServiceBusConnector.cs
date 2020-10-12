@@ -331,6 +331,23 @@
         }
 
         /// <summary>
+        /// Reads the system properties.
+        /// </summary>
+        /// <param name="message">The message to find system properties for.</param>
+        /// <returns>IDictionary&lt;System.String, System.Object&gt;.</returns>
+        private IDictionary<string, object> ReadSystemProperties(T message)
+        {
+            IDictionary<string, object> properties = new Dictionary<string, object>();
+
+            if (Messages.TryGetValue(message, out var msg))
+            {
+                properties.Add("SequenceNumber", msg.SystemProperties.SequenceNumber);
+            }
+
+            return properties;
+        }
+
+        /// <summary>
         /// [BATCHED] Read message call back.
         /// </summary>
         /// <param name="_">[Ignored]</param>
@@ -518,7 +535,7 @@
                             await Lock(m, messageBody))
                         {
                             typedMessages.Add(
-                                new MessageEntity<T>() {Body = messageBody, Properties = m.UserProperties});
+                                new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)});
                         }
                     }
                 }
@@ -572,7 +589,7 @@
                     if (Messages.TryAdd(messageBody, message) &&
                         await Lock(message, messageBody).ConfigureAwait(false))
                     {
-                        return new MessageEntity<T>() {Body = messageBody, Properties = message.UserProperties};
+                        return new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)};
                     }
                 }
 
@@ -600,30 +617,20 @@
         {
             if (Messages.TryGetValue(message, out var msg))
             {
-                var properties = msg.UserProperties;
-                properties.Add("MessageId", msg.MessageId);
-                properties.Add("ContentType", msg.ContentType);
+                var userProperties = msg.UserProperties;
+                userProperties.Add("MessageId", msg.MessageId);
+                userProperties.Add("ContentType", msg.ContentType);
+
+                var systemProperties = ReadSystemProperties(message);
+
+                var properties = userProperties.Concat(systemProperties)
+                    .GroupBy(kv => kv.Key)
+                    .ToDictionary(g => g.Key, g => g.First().Value);
+
                 return properties;
             }
 
             return new Dictionary<string, object>();
-        }
-
-        /// <summary>
-        /// Reads the system properties.
-        /// </summary>
-        /// <param name="message">The message to find system properties for.</param>
-        /// <returns>IDictionary&lt;System.String, System.Object&gt;.</returns>
-        public IDictionary<string, object> ReadSystemProperties(T message)
-        {
-            IDictionary<string, object> properties = new Dictionary<string, object>();
-
-            if (Messages.TryGetValue(message, out var msg))
-            {
-                properties.Add("SequenceNumber", msg.SystemProperties.SequenceNumber);
-            }
-
-            return properties;
         }
 
         /// <summary>
@@ -995,7 +1002,7 @@
                             // If we do not already have this message in processing
                             // then it can be returned from this wrapper.
                             typedMessages.Add(
-                                    new MessageEntity<T>() {Body = messageBody, Properties = m.UserProperties});
+                                    new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)});
                         }
                     }
                 }
