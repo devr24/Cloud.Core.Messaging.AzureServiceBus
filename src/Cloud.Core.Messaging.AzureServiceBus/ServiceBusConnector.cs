@@ -911,8 +911,7 @@
             if (Config.ReceiverInfo.SupportStringBodyType)
             {
                 content = Regex.Replace(content, @"[^\u0020-\u007E]", string.Empty);
-                content = content.Replace("@string3http://schemas.microsoft.com/2003/10/Serialization/",
-                    string.Empty);
+                content = content.Replace("@string3http://schemas.microsoft.com/2003/10/Serialization/", string.Empty);
 
                 if (content.Length == 0 && typeof(T) == typeof(string))
                 {
@@ -973,21 +972,17 @@
                 if (messages == null)
                     return null;
 
-                    var typedMessages = new List<IMessageEntity<T>>();
+                var typedMessages = new List<IMessageEntity<T>>();
 
-                if (messages != null)
+                foreach (var m in messages)
                 {
-                    foreach (var m in messages)
+                    // Convert the message body to generic type object.
+                    var messageBody = GetTypedMessageContent(m);
+                    if (messageBody != null)
                     {
-                        // Convert the message body to generic type object.
-                        var messageBody = GetTypedMessageContent(m);
-                        if (messageBody != null)
-                        {
-                            // If we do not already have this message in processing
-                            // then it can be returned from this wrapper.
-                            typedMessages.Add(
-                                    new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)});
-                        }
+                        // If we do not already have this message in processing
+                        // then it can be returned from this wrapper.
+                        typedMessages.Add(new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)});
                     }
                 }
 

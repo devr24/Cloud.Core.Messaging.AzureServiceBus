@@ -501,11 +501,11 @@
         }
 
         /// <summary>
-        /// 
+        /// Receive an existing batch of items that were previously deferred, using their sequence numbers.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="sequenceNumbers"></param>
-        /// <returns></returns>
+        /// <param name="sequenceNumbers">List of message identities to lookup.</param>
+        /// <returns>List of deferred messages.</returns>
         public async Task<List<T>> ReceiveDeferredBatch<T>(IEnumerable<long> sequenceNumbers) where T : class
         {
             // Setup the queue adapter if it doesn't exist.
@@ -522,6 +522,12 @@
             return deferrals.Select(m => m.Body).ToList();
         }
 
+        /// <summary>
+        /// Receive an existing batch of items that were previously deferred, using their sequence numbers.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="sequenceNumbers">List of message identities to lookup.</param>
+        /// <returns>List of deferred messages.</returns>
         public async Task<List<IMessageEntity<T>>> ReceiveDeferredBatchEntity<T>(IEnumerable<long> sequenceNumbers) where T : class
         {
             // Setup the queue adapter if it doesn't exist.
