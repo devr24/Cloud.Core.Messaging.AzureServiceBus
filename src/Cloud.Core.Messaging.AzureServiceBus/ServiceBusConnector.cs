@@ -682,8 +682,8 @@
             }
             catch (Exception ex) when (ex is MessageLockLostException || ex is MessageNotFoundException)
             {
-                BrokenReceiverCheck(); // Fallback check as we shouldnt have this error here.
-                Logger?.LogWarning(ex, "Error during message lock, fallback iniatied");
+                BrokenReceiverCheck(); // Fallback check as we shouldn't have this error here.
+                Logger?.LogWarning(ex, "Error during message lock, fallback initiated");
                 Release(messageBody);
                 return false;
             }

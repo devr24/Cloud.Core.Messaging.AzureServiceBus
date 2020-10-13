@@ -876,6 +876,44 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             topicTwo.CompleteAllMessages().GetAwaiter().GetResult();
         }
 
+        [Fact]
+        public void Test_ServiceBusTopic_ReceiveDefer()
+        {
+            // Arrange
+            var topicMessenger = GetTopicMessenger("testReceiveAbandon", "testSub");
+            WaitTimeoutAction(async () =>
+            {
+                var testMessage = Lorem.GetSentence();
+
+                // Act - Send the message to initiate receive.
+                await topicMessenger.Send(testMessage);
+
+                Thread.Sleep(2000);
+
+                topicMessenger.StartReceive<string>().Take(1).Subscribe(async m =>
+                {
+                    var props = topicMessenger.ReadProperties(m);
+                    await topicMessenger.Defer(m);
+
+                    Thread.Sleep(2000);
+
+                    var message = await topicMessenger.ReceiveDeferredBatch<string>(new List<long> { (long)props["SequenceNumber"] });
+                    
+                    // Assert
+                    message.Should().NotBeNull();
+                    _stopTimeout = true;
+                    topicMessenger.CancelReceive<string>();
+
+                }, err =>
+                {
+                    // Assert
+                    Assert.True(false, err.Message);
+                    _stopTimeout = true;
+                    topicMessenger.CancelReceive<string>();
+                });
+            });
+        }
+
         private ServiceBusManager GetEntityManagerInstance()
         {
             return new ServiceBusMessenger(new ConnectionConfig
