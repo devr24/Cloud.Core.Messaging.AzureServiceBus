@@ -325,6 +325,23 @@
         }
 
         /// <summary>
+        /// Reads the system properties.
+        /// </summary>
+        /// <param name="message">The message to find system properties for.</param>
+        /// <returns>IDictionary&lt;System.String, System.Object&gt;.</returns>
+        private IDictionary<string, object> ReadSystemProperties(T message)
+        {
+            IDictionary<string, object> properties = new Dictionary<string, object>();
+
+            if (Messages.TryGetValue(message, out var msg))
+            {
+                properties.Add("SequenceNumber", msg.SystemProperties.SequenceNumber);
+            }
+
+            return properties;
+        }
+
+        /// <summary>
         /// [BATCHED] Read message call back.
         /// </summary>
         /// <param name="_">[Ignored]</param>
@@ -509,7 +526,8 @@
                         if (Messages.TryAdd(messageBody, m) &&
                             await Lock(m, messageBody))
                         {
-                            typedMessages.Add(new MessageEntity<T>() { Body = messageBody, Properties = m.UserProperties });
+                            typedMessages.Add(
+                                new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)});
                         }
                     }
                 }
@@ -563,7 +581,7 @@
                     if (Messages.TryAdd(messageBody, message) &&
                         await Lock(message, messageBody).ConfigureAwait(false))
                     {
-                        return new MessageEntity<T>() { Body = messageBody, Properties = message.UserProperties };
+                        return new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)};
                     }
                 }
 
@@ -591,9 +609,16 @@
         {
             if (Messages.TryGetValue(message, out var msg))
             {
-                var properties = msg.UserProperties;
-                properties.Add("MessageId", msg.MessageId);
-                properties.Add("ContentType", msg.ContentType);
+                var userProperties = msg.UserProperties;
+                userProperties.Add("MessageId", msg.MessageId);
+                userProperties.Add("ContentType", msg.ContentType);
+
+                var systemProperties = ReadSystemProperties(message);
+
+                var properties = userProperties.Concat(systemProperties)
+                    .GroupBy(kv => kv.Key)
+                    .ToDictionary(g => g.Key, g => g.First().Value);
+
                 return properties;
             }
 
@@ -747,8 +772,11 @@
         /// Abandons a message by returning it to the queue.
         /// </summary>
         /// <param name="message">The message we want to abandon.</param>
+        /// <param name="propertiesToModify">The message properties to modify</param>
+        /// <param name="modifyMessagesFunc">The modify messages function</param>
         /// <returns>Task.</returns>
-        internal async Task Abandon(T message)
+        internal async Task Abandon(T message, KeyValuePair<string, object>[] propertiesToModify = null,
+            Func<T, KeyValuePair<string, object>[]> modifyMessagesFunc = null)
         {
             if (Messages.TryGetValue(message, out var msg))
             {
@@ -758,15 +786,54 @@
                     if (msg.SystemProperties.LockedUntilUtc < DateTime.Now)
                         Receiver.RenewLockAsync(msg.SystemProperties.LockToken).GetAwaiter().GetResult();
 
-                    await Receiver.AbandonAsync(msg.SystemProperties.LockToken).ConfigureAwait(false);
+                    var msgProps = propertiesToModify ?? modifyMessagesFunc?.Invoke(message);
+
+                    await Receiver
+                        .AbandonAsync(msg.SystemProperties.LockToken, msgProps?.ToDictionary(x => x.Key, x => x.Value))
+                        .ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is MessageLockLostException || ex is MessageNotFoundException)
                 {
-                    Logger?.LogWarning(ex, "Error during message Abandon, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
+                    Logger?.LogWarning(ex,
+                        "Error during message Abandon, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
                 }
                 catch (Exception e)
                 {
                     Logger?.LogError(e, "Error during message Abandon");
+
+                    MessageIn?.OnError(e);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets a message to deferred state in the queue.
+        /// </summary>
+        /// <param name="message">The message we want to defer.</param>
+        /// <param name="propertiesToModify">The message properties to modify</param>
+        /// <param name="modifyMessagesFunc">The modify messages function</param>
+        /// <returns>Task.</returns>
+        internal async Task Defer(T message, KeyValuePair<string, object>[] propertiesToModify = null,
+            Func<T, KeyValuePair<string, object>[]> modifyMessagesFunc = null)
+        {
+            if (Messages.TryGetValue(message, out var msg))
+            {
+                try
+                {
+                    var msgProps = propertiesToModify ?? modifyMessagesFunc?.Invoke(message);
+
+                    await Receiver
+                        .DeferAsync(msg.SystemProperties.LockToken, msgProps?.ToDictionary(x => x.Key, x => x.Value))
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is MessageLockLostException || ex is MessageNotFoundException)
+                {
+                    Logger?.LogWarning(ex,
+                        "Error during message Defer, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
+                }
+                catch (Exception e)
+                {
+                    Logger?.LogError(e, "Error during message Defer");
 
                     MessageIn?.OnError(e);
                 }
@@ -893,6 +960,49 @@
 
             }
             base.Dispose(disposing);
+        }
+
+        public async Task<List<IMessageEntity<T>>> ReceiveDeferred(IEnumerable<long> sequenceNumbers)
+        {
+            try
+            {
+                Receiver.PrefetchCount = 0;
+
+                var messages = await Receiver.ReceiveDeferredMessageAsync(sequenceNumbers);
+
+                if (messages == null)
+                    return null;
+
+                    var typedMessages = new List<IMessageEntity<T>>();
+
+                if (messages != null)
+                {
+                    foreach (var m in messages)
+                    {
+                        // Convert the message body to generic type object.
+                        var messageBody = GetTypedMessageContent(m);
+                        if (messageBody != null)
+                        {
+                            // If we do not already have this message in processing
+                            // then it can be returned from this wrapper.
+                            typedMessages.Add(
+                                    new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)});
+                        }
+                    }
+                }
+
+                return typedMessages;
+            }
+            catch (InvalidOperationException iex)
+            {
+                Logger?.LogError(iex, "Error during read of service bus message");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError(e, "Error during read of service bus message");
+                return null;
+            }
         }
     }
 
