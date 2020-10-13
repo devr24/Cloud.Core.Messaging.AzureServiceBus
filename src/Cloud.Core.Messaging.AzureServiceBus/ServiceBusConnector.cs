@@ -30,12 +30,8 @@
     [ExcludeFromCodeCoverage]
     internal sealed class ServiceBusConnector<T> : ServiceBusConnector where T : class
     {
-        internal readonly ConcurrentDictionary<T, Message> Messages =
-            new ConcurrentDictionary<T, Message>(ObjectReferenceEqualityComparer<T>.Default);
-
-        internal readonly ConcurrentDictionary<T, Timer> LockTimers =
-            new ConcurrentDictionary<T, Timer>(ObjectReferenceEqualityComparer<T>.Default);
-
+        internal readonly ConcurrentDictionary<T, Message> Messages = new ConcurrentDictionary<T, Message>(ObjectReferenceEqualityComparer<T>.Default);
+        internal readonly ConcurrentDictionary<T, Timer> LockTimers = new ConcurrentDictionary<T, Timer>(ObjectReferenceEqualityComparer<T>.Default);
         internal readonly IObserver<T> MessageIn;
         internal Timer ReadTimer;
 
@@ -51,8 +47,7 @@
         /// <param name="messagesIn">The <see cref="IObserver{IMessage}" /> used to push received messages into the pipeline.</param>
         /// <param name="logger">The logger.</param>
         /// <inheritdoc />
-        public ServiceBusConnector([NotNull] ServiceBusManager config, [NotNull] IObserver<T> messagesIn,
-            ILogger logger)
+        public ServiceBusConnector([NotNull] ServiceBusManager config, [NotNull]IObserver<T> messagesIn, ILogger logger)
             : base(config, logger)
         {
             MessageIn = messagesIn;
@@ -86,8 +81,8 @@
                     Read(_, readBatchSize);
                 },
                 null,
-                TimeSpan.FromSeconds(Config.ReceiverInfo.PollFrequencyInSeconds), // start receiving now
-                TimeSpan.FromSeconds(Config.ReceiverInfo.PollFrequencyInSeconds)); // default is every 0.05 seconds 
+                TimeSpan.FromSeconds(Config.ReceiverInfo.PollFrequencyInSeconds),    // start receiving now
+                TimeSpan.FromSeconds(Config.ReceiverInfo.PollFrequencyInSeconds));   // default is every 0.05 seconds 
         }
 
         /// <summary>
@@ -114,8 +109,7 @@
         /// <exception cref="ArgumentOutOfRangeException">Sender Entity has not been configured</exception>
         [ExcludeFromCodeCoverage] // Skipped - too many edge cases that cant be tested.
         internal async Task SendBatch([NotNull] IEnumerable<T> messages, int sendBatchSize,
-            KeyValuePair<string, object>[] properties = null,
-            Func<T, KeyValuePair<string, object>[]> setMessagesFunc = null)
+            KeyValuePair<string, object>[] properties = null, Func<T, KeyValuePair<string, object>[]> setMessagesFunc = null)
         {
             if (Disposed) return;
 
@@ -172,8 +166,7 @@
             {
                 // If the batch size is exceeded during send, then resend any unsent items with a reduced batch size.
                 var reducedBatchSize = Convert.ToInt32(Math.Floor(sendBatchSize * .55));
-                await SendBatch(enumerable.Skip(totalMsgsSent).Take(enumerable.Count() - totalMsgsSent).ToList(),
-                    reducedBatchSize, properties);
+                await SendBatch(enumerable.Skip(totalMsgsSent).Take(enumerable.Count() - totalMsgsSent).ToList(), reducedBatchSize, properties);
             }
             catch (MessagingEntityDisabledException mex)
             {
@@ -195,8 +188,7 @@
                     // Do nothing on error if there are any problems grabbing the size in bytes.
                 }
 
-                Logger?.LogWarning(qex,
-                    $"Error occurred sending messages - sender entity is full (max allowed: {maxSize}, current: {currentSize})");
+                Logger?.LogWarning(qex, $"Error occurred sending messages - sender entity is full (max allowed: {maxSize}, current: {currentSize})");
                 throw new EntityFullException(Config.SenderInfo.EntityName, qex.Message, currentSize, maxSize, qex);
             }
         }
@@ -239,8 +231,7 @@
                     // Do nothing on error if there are any problems grabbing the size in bytes.
                 }
 
-                Logger?.LogWarning(qex,
-                    $"Error occurred sending messages - sender entity is full (max allowed: {maxSize}, current: {currentSize})");
+                Logger?.LogWarning(qex, $"Error occurred sending messages - sender entity is full (max allowed: {maxSize}, current: {currentSize})");
                 throw new EntityFullException(Config.SenderInfo.EntityName, qex.Message, currentSize, maxSize, qex);
             }
         }
@@ -259,7 +250,10 @@
             {
                 ContentType = contentType,
                 Label = msg.GetType().FullName,
-                UserProperties = {{"Version", Config.SenderInfo.MessageVersionString}}
+                UserProperties =
+                {
+                    { "Version", Config.SenderInfo.MessageVersionString }
+                }
             };
 
             if (properties != null)
@@ -312,9 +306,9 @@
             if ((instantCheck && Messages.IsEmpty) ||
                 // 60 seconds renewal backoff
                 (ReceiverSleepTime.Elapsed.TotalSeconds > 60
-                 // Finally, only renew client IF we aren't actively processing any messages at the 
-                 // moment (renewal of new client will break current messages completing/erroring etc).
-                 && Messages.IsEmpty))
+                // Finally, only renew client IF we aren't actively processing any messages at the 
+                // moment (renewal of new client will break current messages completing/erroring etc).
+                && Messages.IsEmpty))
             {
                 var messageCount = GetReceiverMessageCount().GetAwaiter().GetResult();
                 Logger?.LogInformation($"There are {messageCount.ActiveEntityCount} active message(s) on the entity");
@@ -355,7 +349,7 @@
         /// <returns>Task.</returns>
         /// <exception cref="InvalidOperationException">Receiver Entity has not been configured</exception>
         [ExcludeFromCodeCoverage] // Skipped - too many edge cases that cant be tested.
-        internal void Read([MaybeNull] object _, int readBatchSize)
+        internal void Read([MaybeNull]object _, int readBatchSize)
         {
             lock (_objLock)
             {
@@ -414,11 +408,9 @@
                     Logger?.LogError(iex, "Error during read of service bus message");
                     MessageIn?.OnError(iex);
                 }
-                catch (Exception ex) when (ex is MessageLockLostException || ex is MessageNotFoundException ||
-                                           ex is ObjectDisposedException)
+                catch (Exception ex) when (ex is MessageLockLostException || ex is MessageNotFoundException || ex is ObjectDisposedException)
                 {
-                    Logger?.LogWarning(ex,
-                        "Error during message lock, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
+                    Logger?.LogWarning(ex, "Error during message lock, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
                 }
                 catch (Exception e)
                 {
@@ -666,11 +658,9 @@
                                     Logger?.LogWarning(ex, "Error during message lock, service bus client disposed");
                                     Release(messageBody);
                                 }
-                                catch (Exception ex) when (ex is MessageLockLostException ||
-                                                           ex is MessageNotFoundException)
+                                catch (Exception ex) when (ex is MessageLockLostException || ex is MessageNotFoundException)
                                 {
-                                    Logger?.LogWarning(ex,
-                                        "Error during message lock, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
+                                    Logger?.LogWarning(ex, "Error during message lock, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
                                     Release(messageBody);
                                 }
                                 catch (Exception e)
@@ -732,7 +722,6 @@
                         messageLockTokens.Add(msg.SystemProperties.LockToken);
                     }
                 }
-
                 if (messageLockTokens.Count > 0)
                 {
                     await Receiver.CompleteAsync(messageLockTokens).ConfigureAwait(false);
@@ -740,8 +729,7 @@
             }
             catch (Exception ex) when (ex is MessageLockLostException || ex is MessageNotFoundException)
             {
-                Logger?.LogWarning(ex,
-                    "Error during message Complete, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
+                Logger?.LogWarning(ex, "Error during message Complete, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
             }
             catch (Exception e)
             {
@@ -770,8 +758,7 @@
             }
             catch (Exception ex) when (ex is MessageLockLostException || ex is MessageNotFoundException)
             {
-                Logger?.LogWarning(ex,
-                    "Error during message Complete, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
+                Logger?.LogWarning(ex, "Error during message Complete, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
             }
             catch (Exception e)
             {
@@ -876,8 +863,7 @@
                 }
                 catch (Exception ex) when (ex is MessageLockLostException || ex is MessageNotFoundException)
                 {
-                    Logger?.LogWarning(ex,
-                        "Error during message DeadLetter, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
+                    Logger?.LogWarning(ex, "Error during message DeadLetter, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
                 }
                 catch (Exception e)
                 {
@@ -894,7 +880,7 @@
         /// This is called by all the methods that terminate the life of a message like COMPLETE, ABANDON and ERROR.
         /// </summary>
         /// <param name="message">The message that we want to release.</param>
-        internal void Release([NotNull] T message)
+        internal void Release([NotNull]T message)
         {
             Messages.TryRemove(message, out _);
 
@@ -920,8 +906,7 @@
 
             // Check for no content (we cannot process this).
             if (content.IsNullOrEmpty() && !Config.ReceiverInfo.SupportStringBodyType)
-                throw new InvalidOperationException(
-                    $"Cannot access the message content for message {message.MessageId}");
+                throw new InvalidOperationException($"Cannot access the message content for message {message.MessageId}");
 
             if (Config.ReceiverInfo.SupportStringBodyType)
             {
@@ -936,7 +921,7 @@
             }
 
             try
-            {
+            { 
                 return JsonConvert.DeserializeObject<T>(content);
             }
             catch (Exception ex) when (ex is JsonReaderException || ex is JsonSerializationException)
@@ -974,7 +959,6 @@
                 ReadTimer?.Dispose();
 
             }
-
             base.Dispose(disposing);
         }
 
