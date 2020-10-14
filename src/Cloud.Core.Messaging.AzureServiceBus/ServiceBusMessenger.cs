@@ -539,7 +539,7 @@
             var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
 
             // Start ready for this type.
-            return await queue?.ReceiveDeferred(sequenceNumbers);
+            return await queue.ReceiveDeferred(sequenceNumbers);
         }
 
         /// <summary>
@@ -572,7 +572,7 @@
         /// <returns>The message queue adapter.</returns>
         internal ServiceBusConnector<T> SetupConnectorType<T>() where T : class
         {
-            System.Threading.Monitor.Enter(SetupGate);
+            Monitor.Enter(SetupGate);
 
             try
             {
