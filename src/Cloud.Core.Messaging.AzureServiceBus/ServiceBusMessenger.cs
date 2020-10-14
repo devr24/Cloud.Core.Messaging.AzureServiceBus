@@ -519,7 +519,7 @@
             // Start ready for this type.
             var deferrals = await queue.ReceiveDeferred(sequenceNumbers);
 
-            return deferrals.Select(m => m.Body).ToList();
+            return deferrals?.Select(m => m.Body).ToList();
         }
 
         /// <summary>
@@ -539,7 +539,7 @@
             var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
 
             // Start ready for this type.
-            return await queue.ReceiveDeferred(sequenceNumbers);
+            return await queue?.ReceiveDeferred(sequenceNumbers);
         }
 
         /// <summary>

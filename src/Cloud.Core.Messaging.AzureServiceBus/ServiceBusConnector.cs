@@ -325,23 +325,6 @@
         }
 
         /// <summary>
-        /// Reads the system properties.
-        /// </summary>
-        /// <param name="message">The message to find system properties for.</param>
-        /// <returns>IDictionary&lt;System.String, System.Object&gt;.</returns>
-        private IDictionary<string, object> ReadSystemProperties(T message)
-        {
-            IDictionary<string, object> properties = new Dictionary<string, object>();
-
-            if (Messages.TryGetValue(message, out var msg))
-            {
-                properties.Add("SequenceNumber", msg.SystemProperties.SequenceNumber);
-            }
-
-            return properties;
-        }
-
-        /// <summary>
         /// [BATCHED] Read message call back.
         /// </summary>
         /// <param name="_">[Ignored]</param>
@@ -517,7 +500,7 @@
 
                 foreach (var m in messages)
                 {
-                    // Convert the message body to generic type objet.
+                    // Convert the message body to generic type object.
                     var messageBody = GetTypedMessageContent(m);
                     if (messageBody != null)
                     {
@@ -526,8 +509,7 @@
                         if (Messages.TryAdd(messageBody, m) &&
                             await Lock(m, messageBody))
                         {
-                            typedMessages.Add(
-                                new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)});
+                            typedMessages.Add(new MessageEntity<T> {Body = messageBody, Properties = ReadProperties(messageBody)});
                         }
                     }
                 }
@@ -572,7 +554,7 @@
 
                 var message = messages[0];
 
-                // Convert the message body to generic type objet.
+                // Convert the message body to generic type object.
                 var messageBody = GetTypedMessageContent(message);
                 if (messageBody != null)
                 {
@@ -581,10 +563,67 @@
                     if (Messages.TryAdd(messageBody, message) &&
                         await Lock(message, messageBody).ConfigureAwait(false))
                     {
-                        return new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)};
+                        return new MessageEntity<T> { Body = messageBody, Properties = ReadProperties(messageBody) };
                     }
                 }
 
+                return null;
+            }
+            catch (InvalidOperationException iex)
+            {
+                Logger?.LogError(iex, "Error during read of service bus message");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError(e, "Error during read of service bus message");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Receives the deferred messages.
+        /// </summary>
+        /// <param name="sequenceNumbers">The sequence numbers for deferred messages to lookup.</param>
+        /// <returns>List&lt;IMessageEntity&lt;T&gt;&gt;.</returns>
+        internal async Task<List<IMessageEntity<T>>> ReceiveDeferred(IEnumerable<long> sequenceNumbers)
+        {
+            try
+            {
+                Receiver.PrefetchCount = 0;
+
+                var messages = await Receiver.ReceiveDeferredMessageAsync(sequenceNumbers);
+
+                if (messages == null)
+                    return null;
+
+                var typedMessages = new List<IMessageEntity<T>>();
+
+                foreach (var m in messages)
+                {
+                    // Convert the message body to generic type object.
+                    var messageBody = GetTypedMessageContent(m);
+                    if (messageBody != null)
+                    {
+                        // If we do not already have this message in processing AND we can
+                        // successfully lock the message, then it can be added to the return list.
+                        if (Messages.TryAdd(messageBody, m) && await Lock(m, messageBody).ConfigureAwait(false))
+                        {
+                            // If we do not already have this message in processing
+                            // then it can be returned from this wrapper.
+                            typedMessages.Add(new MessageEntity<T>
+                            {
+                                Body = messageBody, Properties = ReadProperties(messageBody)
+                            });
+                        }
+                    }
+                }
+
+                return typedMessages;
+            }
+            catch (ServiceBusException e)
+            {
+                Logger?.LogError(e, "Error during read of service bus message");
                 return null;
             }
             catch (InvalidOperationException iex)
@@ -610,12 +649,12 @@
             if (Messages.TryGetValue(message, out var msg))
             {
                 var userProperties = msg.UserProperties;
-                userProperties.Add("MessageId", msg.MessageId);
-                userProperties.Add("ContentType", msg.ContentType);
+                userProperties.AddOrUpdate("MessageId", msg.MessageId);
+                userProperties.AddOrUpdate("ContentType", msg.ContentType);
+                userProperties.AddOrUpdate("SequenceNumber", msg.SystemProperties.SequenceNumber);
 
-                var systemProperties = ReadSystemProperties(message);
 
-                var properties = userProperties.Concat(systemProperties)
+                var properties = userProperties
                     .GroupBy(kv => kv.Key)
                     .ToDictionary(g => g.Key, g => g.First().Value);
 
@@ -820,6 +859,7 @@
             {
                 try
                 {
+                    Release(message);
                     var msgProps = propertiesToModify ?? modifyMessagesFunc?.Invoke(message);
 
                     await Receiver
@@ -959,45 +999,6 @@
 
             }
             base.Dispose(disposing);
-        }
-
-        public async Task<List<IMessageEntity<T>>> ReceiveDeferred(IEnumerable<long> sequenceNumbers)
-        {
-            try
-            {
-                Receiver.PrefetchCount = 0;
-
-                var messages = await Receiver.ReceiveDeferredMessageAsync(sequenceNumbers);
-
-                if (messages == null)
-                    return null;
-
-                var typedMessages = new List<IMessageEntity<T>>();
-
-                foreach (var m in messages)
-                {
-                    // Convert the message body to generic type object.
-                    var messageBody = GetTypedMessageContent(m);
-                    if (messageBody != null)
-                    {
-                        // If we do not already have this message in processing
-                        // then it can be returned from this wrapper.
-                        typedMessages.Add(new MessageEntity<T>() {Body = messageBody, Properties = ReadProperties(messageBody)});
-                    }
-                }
-
-                return typedMessages;
-            }
-            catch (InvalidOperationException iex)
-            {
-                Logger?.LogError(iex, "Error during read of service bus message");
-                throw;
-            }
-            catch (Exception e)
-            {
-                Logger?.LogError(e, "Error during read of service bus message");
-                return null;
-            }
         }
     }
 

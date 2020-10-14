@@ -661,7 +661,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
                 queueMessenger.StartReceive<string>().Take(1).Subscribe(async m =>
                 {
-                    await queueMessenger.Abandon(m);
+                    await queueMessenger.Abandon(m, new KeyValuePair<string, object>[] { new KeyValuePair<string, object>("key", "value"),  });
                     _stopTimeout = true;
                     queueMessenger.CancelReceive<string>();
                 }, err =>
@@ -892,15 +892,24 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
                 topicMessenger.StartReceive<string>().Take(1).Subscribe(async m =>
                 {
-                    var props = topicMessenger.ReadProperties(m);
-                    await topicMessenger.Defer(m);
+                    var props1 = topicMessenger.ReadProperties(m);
+                    await topicMessenger.Defer(m, props1.Select(p => new KeyValuePair<string, object>(p.Key, p.Value)).ToArray());
 
-                    Thread.Sleep(2000);
+                    await Task.Delay(2000);
 
-                    var message = await topicMessenger.ReceiveDeferredBatch<string>(new List<long> { (long)props["SequenceNumber"] });
-                    
+                    var messages = await topicMessenger.ReceiveDeferredBatchEntity<string>(new List<long> { (long)props1["SequenceNumber"] });
+                    var msg2 = messages.FirstOrDefault();
+                    //var props2 = topicMessenger.ReadProperties(msg2);
+                    await topicMessenger.Defer(msg2.Body);
+
+                    // This will be null because it takes time for the deferrals to propogate through.
+                    var msgs = await topicMessenger.ReceiveDeferredBatch<string>(new List<long> { (long)msg2.Properties["SequenceNumber"] });  
+
                     // Assert
-                    message.Should().NotBeNull();
+                    messages.Should().NotBeNull();
+                    messages.FirstOrDefault().Should().NotBeNull();
+                    msgs.Should().BeNull();
+                    
                     _stopTimeout = true;
                     topicMessenger.CancelReceive<string>();
 
