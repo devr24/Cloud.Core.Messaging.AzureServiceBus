@@ -333,11 +333,8 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             {
                 var messages = queueMessenger.ReceiveBatchEntity<string>(batchSize);
                 
-                foreach (var msg in messages)
-                {
-                    queueMessenger.Complete(msg.Body).GetAwaiter().GetResult();
-                }
-
+                queueMessenger.CompleteAll(messages.Select(m => m.Body)).GetAwaiter().GetResult();
+                
                 loopCounter += batchSize;
             } while (loopCounter < messageCount);
 

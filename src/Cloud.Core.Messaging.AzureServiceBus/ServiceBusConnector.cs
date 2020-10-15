@@ -480,7 +480,7 @@
         {
             try
             {
-                Receiver.PrefetchCount = 0;
+                Receiver.PrefetchCount = batchSize;
 
                 // Get a single message from the receiver entity.
                 var messages = await Receiver.ReceiveAsync(batchSize, TimeSpan.FromSeconds(5));
