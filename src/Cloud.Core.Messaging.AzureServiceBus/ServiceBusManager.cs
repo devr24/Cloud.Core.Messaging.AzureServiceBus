@@ -422,9 +422,8 @@
         /// <param name="entitySubscriptionName">The updated subscription on the entity to listen to.</param>
         /// <param name="createIfNotExists">Creates the entity if it does not exist</param>
         /// <param name="entityFilter">A filter that will be applied to the entity if created through this method</param>
-        /// <param name="supportStringBodyType">Support reading Service Bus message body as a string</param>
         /// <returns></returns>
-        internal async Task UpdateReceiver(string entityName, string entitySubscriptionName, bool createIfNotExists, KeyValuePair<string, string>? entityFilter, bool supportStringBodyType = false)
+        internal async Task UpdateReceiver(string entityName, string entitySubscriptionName, bool createIfNotExists, KeyValuePair<string, string>? entityFilter)
         {
             // If no receiver exists (wasnt subscribed to), then create new.
             if (ReceiverInfo == null)
@@ -432,13 +431,13 @@
                 ReceiverInfo = new ReceiverInfo();
             }
 
-            // Update the reciever info with the new config.
+            // Update the receiver info with the new config.
             ReceiverInfo.EntityType = EntityType.Topic; //TODO: Future - need to know this, presumed Topic.
             ReceiverInfo.EntityName = entityName;
             ReceiverInfo.EntitySubscriptionName = entitySubscriptionName;
             ReceiverInfo.CreateEntityIfNotExists = createIfNotExists;
             ReceiverInfo.EntityFilter = entityFilter;
-            ReceiverInfo.SupportStringBodyType = supportStringBodyType;
+            ReceiverInfo.SupportStringBodyType = _entityConfig.Receiver.SupportStringBodyType;
 
             // Ensure the entity manager is configured up.
             await SetAdditionalReceiverInfo();

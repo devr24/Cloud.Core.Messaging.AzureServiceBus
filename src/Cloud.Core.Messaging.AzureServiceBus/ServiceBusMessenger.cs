@@ -326,9 +326,10 @@
         /// <typeparam name="T">Type of object on the entity.</typeparam>
         /// <param name="batchSize">Size of the batch.</param>
         /// <returns>IMessageItem&lt;T&gt;.</returns>
-        public List<T> ReceiveBatch<T>(int batchSize) where T : class
+        public async Task<List<T>> ReceiveBatch<T>(int batchSize) where T : class
         {
-            return ReceiveBatchEntity<T>(batchSize)?.Select(m => m.Body).ToList();
+            var messages = await ReceiveBatchEntity<T>(batchSize);
+            return messages?.Select(m => m.Body).ToList();
         }
 
         /// <summary>
@@ -337,7 +338,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="batchSize">Size of the batch.</param>
         /// <returns>IMessageEntity&lt;T&gt;.</returns>
-        public List<IMessageEntity<T>> ReceiveBatchEntity<T>(int batchSize) where T : class
+        public async Task<List<IMessageEntity<T>>> ReceiveBatchEntity<T>(int batchSize) where T : class
         {
             // Setup the queue adapter if it doesn't exist.
             if (!QueueConnectors.ContainsKey(typeof(T)))
@@ -348,7 +349,7 @@
             var queue = (ServiceBusConnector<T>)QueueConnectors[typeof(T)];
 
             // Start ready for this type.
-            return queue.ReadBatch(batchSize).GetAwaiter().GetResult();
+            return await queue.ReadBatch(batchSize);
         }
 
         /// <summary>
@@ -739,9 +740,9 @@
         /// <param name="entitySubscriptionName">The name of the updated Subscription on the Topic.</param>
         /// <param name="createIfNotExists">Creates the entity if it does not exist</param>
         /// <param name="entityFilter">A filter that will be applied to the entity if created through this method</param>
-        /// <param name="supportStringBodyType">Support reading Service Bus message body as a string</param>
+        /// <param name="entityDeadletterName">Ignored.</param>
         /// <returns></returns>
-        public async Task UpdateReceiver(string entityName, string entitySubscriptionName = null, bool createIfNotExists = false, KeyValuePair<string, string>? entityFilter = null, bool supportStringBodyType = false)
+        public async Task UpdateReceiver(string entityName, string entitySubscriptionName = null, bool createIfNotExists = false, KeyValuePair<string, string>? entityFilter = null, string entityDeadletterName = null)
         {
             if (!(EntityManager is ServiceBusManager))
             {
@@ -754,7 +755,7 @@
             // Clear all adapters.
             QueueConnectors?.Release();
 
-            await ConnectionManager.UpdateReceiver(entityName, entitySubscriptionName, createIfNotExists, entityFilter, supportStringBodyType);
+            await ConnectionManager.UpdateReceiver(entityName, entitySubscriptionName, createIfNotExists, entityFilter);
 
             // Short sleep while the settings are applied.
             await Task.Delay(5000);

@@ -478,43 +478,47 @@
         /// <returns>Async task.</returns>
         internal async Task<List<IMessageEntity<T>>> ReadBatch(int batchSize)
         {
+            var typedMessages = new List<IMessageEntity<T>>();
             try
             {
-                Receiver.PrefetchCount = batchSize;
 
-                // Get a single message from the receiver entity.
-                var messages = await Receiver.ReceiveAsync(batchSize, TimeSpan.FromSeconds(5));
-
-                if (messages == null)
+                Receiver = new MessageReceiver(Config.ConnectionString, Config.ReceiverInfo.ReceiverFullPath, ReceiveMode.PeekLock,
+                    new RetryExponential(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(500), 3))
                 {
-                    // If we have null returned, double check we aren't getting null when there are
-                    // actually items on the entity - BUG FIX FOR SB.
-                    if (BrokenReceiverCheck())
-                        messages = await Receiver.ReceiveAsync(batchSize, TimeSpan.FromSeconds(10));
+                    PrefetchCount = 0
+                };
+                var maxTimeout = new Stopwatch();
+                maxTimeout.Start();
 
-                    if (messages == null)
-                        return null;
-                }
-
-                var typedMessages = new List<IMessageEntity<T>>();
-
-                foreach (var m in messages)
+                do
                 {
-                    // Convert the message body to generic type object.
-                    var messageBody = GetTypedMessageContent(m);
-                    if (messageBody != null)
+                    // Get a single message from the receiver entity.
+                    var messages = await Receiver.ReceiveAsync(batchSize, TimeSpan.FromSeconds(5));
+                    if (messages != null)
                     {
-                        // If we do not already have this message in processing AND we can
-                        // successfully lock the message, then it can be returned from this wrapper.
-                        if (Messages.TryAdd(messageBody, m) &&
-                            await Lock(m, messageBody))
+                        foreach (var m in messages)
                         {
-                            typedMessages.Add(new MessageEntity<T> {Body = messageBody, Properties = ReadProperties(messageBody)});
+                            if (typedMessages.Count < batchSize)
+                            {
+                                // Convert the message body to generic type object.
+                                var messageBody = GetTypedMessageContent(m);
+                                if (messageBody != null)
+                                {
+                                    // If we do not already have this message in processing AND we can
+                                    // successfully lock the message, then it can be returned from this wrapper.
+                                    if (Messages.TryAdd(messageBody, m) &&
+                                        await Lock(m, messageBody))
+                                    {
+                                        typedMessages.Add(new MessageEntity<T>
+                                        {
+                                            Body = messageBody, Properties = ReadProperties(messageBody)
+                                        });
+                                    }
+                                }
+                            }
                         }
                     }
-                }
-
-                return typedMessages;
+                } while (typedMessages.Count < batchSize && maxTimeout.Elapsed.TotalSeconds < 60);
             }
             catch (InvalidOperationException iex)
             {
@@ -524,8 +528,9 @@
             catch (Exception e)
             {
                 Logger?.LogError(e, "Error during read of service bus message");
-                return null;
             }
+            
+            return typedMessages;
         }
 
         /// <summary>

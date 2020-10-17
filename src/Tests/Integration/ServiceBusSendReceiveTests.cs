@@ -301,7 +301,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
             do
             {
-                var messages = queueMessenger.ReceiveBatch<string>(batchSize);
+                var messages = queueMessenger.ReceiveBatch<string>(batchSize).GetAwaiter().GetResult();
 
                 foreach (var msg in messages)
                 {
@@ -321,8 +321,8 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
         {
             // Arrange
             var loopCounter = 0;
-            var batchSize = 10;
-            var messageCount = 55;
+            var batchSize = 100;
+            var messageCount = 500;
             var queueMessenger = GetQueueMessenger("batchQueueMessenger");
             CreateStringTestMessages(queueMessenger, messageCount+10).GetAwaiter().GetResult();
 
@@ -331,7 +331,9 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
             do
             {
-                var messages = queueMessenger.ReceiveBatchEntity<string>(batchSize);
+                var messages = queueMessenger.ReceiveBatchEntity<string>(batchSize).GetAwaiter().GetResult();
+                
+                messages.Count().Should().Be(100);
                 
                 queueMessenger.CompleteAll(messages.Select(m => m.Body)).GetAwaiter().GetResult();
                 
