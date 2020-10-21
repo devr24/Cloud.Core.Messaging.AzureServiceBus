@@ -301,7 +301,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             var test = "hello";
 
             // Act
-            var messageEntity = (MessageEntity<string>)test;
+            var messageEntity = (ServiceBusMessageEntity<string>)test;
 
             // Assert
             messageEntity.Body.Should().BeEquivalentTo(test);

@@ -19,6 +19,7 @@
     using Models;
     using Comparer;
     using System.Diagnostics.CodeAnalysis;
+    using Extensions;
 
     /// <summary>
     /// Generics based message queue router from <see cref="IObservable{T}" /> through to the <see cref="QueueClient" />.
@@ -509,7 +510,7 @@
                                     if (Messages.TryAdd(messageBody, m) &&
                                         await Lock(m, messageBody))
                                     {
-                                        typedMessages.Add(new MessageEntity<T>
+                                        typedMessages.Add(new ServiceBusMessageEntity<T>
                                         {
                                             Body = messageBody, Properties = ReadProperties(messageBody)
                                         });
@@ -568,7 +569,7 @@
                     if (Messages.TryAdd(messageBody, message) &&
                         await Lock(message, messageBody).ConfigureAwait(false))
                     {
-                        return new MessageEntity<T> { Body = messageBody, Properties = ReadProperties(messageBody) };
+                        return new ServiceBusMessageEntity<T> { Body = messageBody, Properties = ReadProperties(messageBody) };
                     }
                 }
 
@@ -616,7 +617,7 @@
                         {
                             // If we do not already have this message in processing
                             // then it can be returned from this wrapper.
-                            typedMessages.Add(new MessageEntity<T>
+                            typedMessages.Add(new ServiceBusMessageEntity<T>
                             {
                                 Body = messageBody, Properties = ReadProperties(messageBody)
                             });
@@ -754,17 +755,25 @@
                 var messageLockTokens = new List<string>();
                 foreach (var message in messages)
                 {
-                    if (Messages.TryGetValue(message, out var msg))
+                    if (!Messages.TryGetValue(message, out var msg))
                     {
-                        Release(message);
-                        if (msg.SystemProperties.LockedUntilUtc < DateTime.Now)
-                            Receiver.RenewLockAsync(msg.SystemProperties.LockToken).GetAwaiter().GetResult();
+                        var body = message.GetPropertyValueByName("body") as T;
+                        if (body != null)
+                        {
+                            Messages.TryGetValue(body, out msg);
+                        }
                     }
 
-                    if (msg?.SystemProperties.LockToken != null)
+                    if (msg == null) continue;
+
+                    Release(message);
+
+                    if (msg.SystemProperties.LockedUntilUtc < DateTime.Now)
                     {
-                        messageLockTokens.Add(msg.SystemProperties.LockToken);
+                        Receiver.RenewLockAsync(msg.SystemProperties.LockToken).GetAwaiter().GetResult();
                     }
+
+                    messageLockTokens.Add(msg.SystemProperties.LockToken);
                 }
                 if (messageLockTokens.Count > 0)
                 {
@@ -790,26 +799,7 @@
         /// <returns>Task.</returns>
         internal async Task Complete(T message)
         {
-            try
-            {
-                if (Messages.TryGetValue(message, out var msg))
-                {
-                    Release(message);
-                    if (msg.SystemProperties.LockedUntilUtc < DateTime.Now)
-                        Receiver.RenewLockAsync(msg.SystemProperties.LockToken).GetAwaiter().GetResult();
-                    await Receiver.CompleteAsync(msg.SystemProperties.LockToken).ConfigureAwait(false);
-                }
-            }
-            catch (Exception ex) when (ex is MessageLockLostException || ex is MessageNotFoundException)
-            {
-                Logger?.LogWarning(ex, "Error during message Complete, lock was lost [THIS CAN BE IGNORED - already in use or already processed]");
-            }
-            catch (Exception e)
-            {
-                Logger?.LogError(e, "Error during message Complete");
-
-                MessageIn?.OnError(e);
-            }
+            await Complete(new List<T> { message });
         }
 
         /// <summary>

@@ -5,8 +5,8 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Models
     /// <summary>
     /// Config for creating an entity such as Queue, Topic or Subscription
     /// </summary>
-    /// <seealso cref="Cloud.Core.IEntityConfig" />
-    public class ServiceBusEntityConfig : IEntityConfig
+    /// <seealso cref="IMessageEntityConfig" />
+    public class ServiceBusEntityConfig : IMessageEntityConfig
     {
         /// <summary>
         /// The name of the Topic or Queue that will be created.

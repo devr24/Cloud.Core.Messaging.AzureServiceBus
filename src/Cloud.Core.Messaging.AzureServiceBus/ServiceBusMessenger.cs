@@ -408,7 +408,7 @@
         /// <typeparam name="T"></typeparam>
         public void CancelReceive<T>() where T : class
         {
-            System.Threading.Monitor.Enter(CancelGate);
+            Monitor.Enter(CancelGate);
 
             try
             {
@@ -429,7 +429,7 @@
             }
             finally
             {
-                System.Threading.Monitor.Exit(CancelGate);
+                Monitor.Exit(CancelGate);
             }
         }
 
@@ -738,11 +738,9 @@
         /// </summary>
         /// <param name="entityName">The name of the updated Topic to Listen to.</param>
         /// <param name="entitySubscriptionName">The name of the updated Subscription on the Topic.</param>
-        /// <param name="createIfNotExists">Creates the entity if it does not exist</param>
         /// <param name="entityFilter">A filter that will be applied to the entity if created through this method</param>
-        /// <param name="entityDeadletterName">Ignored.</param>
         /// <returns></returns>
-        public async Task UpdateReceiver(string entityName, string entitySubscriptionName = null, bool createIfNotExists = false, KeyValuePair<string, string>? entityFilter = null, string entityDeadletterName = null)
+        public async Task UpdateReceiver(string entityName, string entitySubscriptionName = null, KeyValuePair<string, string>? entityFilter = null)
         {
             if (!(EntityManager is ServiceBusManager))
             {
@@ -755,7 +753,7 @@
             // Clear all adapters.
             QueueConnectors?.Release();
 
-            await ConnectionManager.UpdateReceiver(entityName, entitySubscriptionName, createIfNotExists, entityFilter);
+            await ConnectionManager.UpdateReceiver(entityName, entitySubscriptionName, ((ConfigBase)Config).Receiver.CreateEntityIfNotExists, entityFilter);
 
             // Short sleep while the settings are applied.
             await Task.Delay(5000);

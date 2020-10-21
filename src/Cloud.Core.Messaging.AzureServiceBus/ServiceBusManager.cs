@@ -241,7 +241,7 @@
         /// </summary>
         /// <param name="config">The config with the creation details, <see cref="ServiceBusEntityConfig"/>.</param>
         /// <exception cref="NullReferenceException"></exception>
-        public async Task CreateEntity(IEntityConfig config)
+        public async Task CreateEntity(IMessageEntityConfig config)
         {
             if (!(config is ServiceBusEntityConfig sbConfig))
             {

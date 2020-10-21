@@ -86,7 +86,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                 // Arrange
                 msg.Body.Test1.Should().BeGreaterThan(0).And.BeLessThan(100);
                 msg.Properties.Keys.Should().Contain("Test1");
-                msg.GetPropertiesTyped<TestProps>().Test1.Should().Be(msg.Body.Test1);
+                ((ServiceBusMessageEntity<TestProps>)msg).GetPropertiesTyped<TestProps>().Test1.Should().Be(msg.Body.Test1);
                 msg = topicMessenger.ReceiveOneEntity<TestProps>();
             } while (msg != null);
         }
@@ -229,7 +229,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             Assert.NotNull(receivedMessageEntity);
             receivedMessageEntity.Body.Should().Be(testMessage);
             receivedMessageEntity.Properties.Should().Contain(props);
-            var typedProps = receivedMessageEntity.GetPropertiesTyped<TestProps>();
+            var typedProps = ((ServiceBusMessageEntity<string>)receivedMessageEntity).GetPropertiesTyped<TestProps>();
             typedProps.Test1.Should().Be(1);
             typedProps.Test2.Should().Be(true);
             typedProps.Version.Should().Be("2.00");
