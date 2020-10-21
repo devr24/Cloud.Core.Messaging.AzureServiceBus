@@ -757,8 +757,7 @@
                 {
                     if (!Messages.TryGetValue(message, out var msg))
                     {
-                        var body = message.GetPropertyValueByName("body") as T;
-                        if (body != null)
+                        if (message.GetPropertyValueByName("body") is T body)
                         {
                             Messages.TryGetValue(body, out msg);
                         }

@@ -742,11 +742,6 @@
         /// <returns></returns>
         public async Task UpdateReceiver(string entityName, string entitySubscriptionName = null, KeyValuePair<string, string>? entityFilter = null)
         {
-            if (!(EntityManager is ServiceBusManager))
-            {
-                throw new InvalidOperationException("Service Bus Messenger Client was not using a ServiceBusManager as it's EntityManager");
-            }
-
             // Clear all message subscriptions.
             MessageSubs?.Release();
 

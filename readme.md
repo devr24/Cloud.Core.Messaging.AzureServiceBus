@@ -5,6 +5,7 @@
 
 Azure Service Bus (Queues and Topics) implementation of the messaging interfaces provided in Cloud.Core.  Abstracts queue and topic subscriptions and management.
 
+**[Read full Api documentation](https://cloud1core.blob.core.windows.net/docs/Cloud.Core.Messaging.AzureServiceBus/api/index.html)**
 </div>
 
 ## Design
