@@ -5,6 +5,8 @@ using Cloud.Core.Messaging.AzureServiceBus.Config;
 using Cloud.Core.Messaging.AzureServiceBus.Models;
 using Cloud.Core.Testing;
 using FluentAssertions;
+using Microsoft.Azure.Management.Compute.Fluent.Models;
+using Microsoft.Azure.Management.ContainerRegistry.Fluent.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -317,8 +319,37 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             // Act/Assert
             Assert.Throws<ArgumentException>(() => sender.Validate());
         }
-    }
 
+        /// <summary>Verify typed properties are mapped as expected.</summary>
+        [Fact]
+        public void Test_ServiceBus_MessageEntity()
+        {
+            // Arrange
+            var entity = new MessageEntity<TestObject>
+            {
+                Body = new TestObject
+                {
+                    Prop1 = "test"
+                },
+                Properties = new Dictionary<string, object>
+                {
+                    { "Prop1", "PropTest" }
+                }
+            };
+
+            // Act
+            var propEntity = entity.GetPropertiesTyped<TestObject>();
+
+            // Assert
+            entity.Body.Prop1.Should().BeEquivalentTo("test");
+            propEntity.Prop1.Should().BeEquivalentTo("PropTest");
+        }
+
+        private class TestObject
+        {
+            public string Prop1 { get; set; }
+        }
+    }
     public class ConfigTest : ConfigBase
     {
 
