@@ -5,8 +5,6 @@ using Cloud.Core.Messaging.AzureServiceBus.Config;
 using Cloud.Core.Messaging.AzureServiceBus.Models;
 using Cloud.Core.Testing;
 using FluentAssertions;
-using Microsoft.Azure.Management.Compute.Fluent.Models;
-using Microsoft.Azure.Management.ContainerRegistry.Fluent.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -286,13 +284,11 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             var connectionConfig = new ConnectionConfig();
             var spConfig = new ServicePrincipleConfig() { SharedAccessPolicyName = "TestPolicy", InstanceName = "testSBInstance", AppId = "TestAppId", AppSecret = "TestAppSecret", TenantId = "TestTenantId", SubscriptionId = "FakeSubscriptionId" };
             var serviceBus = new ServiceBusMessenger(spConfig);
-            ISignedAccessConfig sharedAccessConfig = null;
 
             // Assert
             serviceBus.ToString().Should().NotBeNullOrEmpty();
             serviceBus.Name.Should().Be("testSBInstance");
             (serviceBus.Config as ServicePrincipleConfig).Should().NotBeNull();
-            Assert.Throws<NotImplementedException>(() => serviceBus.GetSignedAccessUrl(sharedAccessConfig));
         }
 
         /// <summary>Verify implicit conversion works as expected.</summary>

@@ -556,17 +556,6 @@
         }
 
         /// <summary>
-        /// Interface method to allow retrieval of SignedAccessUrls for supported Message Providers.
-        /// ServiceBus is not currently a supported Message Provider so it will error with "Not Implemented" if it is used.
-        /// </summary>
-        /// <param name="accessConfig"></param>
-        /// <returns></returns>
-        public string GetSignedAccessUrl(ISignedAccessConfig accessConfig)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
         /// Sets the messenger up for sending / receiving a specific message of type <typeparamref name="T" />.
         /// </summary>
         /// <typeparam name="T">The type of the message we are setting up.</typeparam>
