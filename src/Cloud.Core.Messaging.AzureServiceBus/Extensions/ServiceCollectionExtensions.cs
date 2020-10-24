@@ -137,7 +137,7 @@
         }
 
         /// <summary>
-        /// Add service bus singleton of type T, using named properties (as opposed to passing MsiConfig/ServicePrincipleConfig etc).
+        /// Add service bus singleton of type ServiceBusMessenger, using named properties (as opposed to passing MsiConfig/ServicePrincipleConfig etc).
         /// Will automatically use MsiConfiguration.
         /// </summary>
         /// <param name="services">Service collection to extend.</param>
@@ -147,7 +147,7 @@
         /// <param name="receiver">Receiver configuration (if any).</param>
         /// <param name="sender">Sender configuration (if any).</param>
         /// <param name="enableAutoBackoff">Back-off mechanism enabled (only works when both sender and receiver is configured).</param>
-        /// <returns>Modified service collection with the IReactiveMessenger, IMessenger and NamedInstanceFactory{T} configured.</returns>
+        /// <returns>Modified service collection with the ServiceBusMessenger and NamedInstanceFactory{ServiceBusMessenger} configured.</returns>
         public static IServiceCollection AddServiceBusSingleton(this IServiceCollection services, string instanceName, string tenantId, string subscriptionId, ReceiverSetup receiver = null, SenderSetup sender = null, bool enableAutoBackoff = false)
         {
             return services.AddServiceBusSingletonNamed<ServiceBusMessenger>(null, instanceName, tenantId, subscriptionId, receiver, sender, enableAutoBackoff);
@@ -159,7 +159,7 @@
         /// </summary>
         /// <param name="services">Service collection to extend.</param>
         /// <param name="config">The configuration.</param>
-        /// <returns>Modified service collection with the ServiceBusMessenger and NamedInstanceFactory{T} configured.</returns>
+        /// <returns>Modified service collection with the ServiceBusMessenger and NamedInstanceFactory{ServiceBusMessenger} configured.</returns>
         public static IServiceCollection AddServiceBusSingleton(this IServiceCollection services, MsiConfig config)
         {
             return AddNamedInstance<ServiceBusMessenger>(services, null, new ServiceBusMessenger(config));
@@ -171,7 +171,7 @@
         /// </summary>
         /// <param name="services">Service collection to extend.</param>
         /// <param name="config">The configuration.</param>
-        /// <returns>Modified service collection with the ServiceBusMessenger and NamedInstanceFactory{T} configured.</returns>
+        /// <returns>Modified service collection with the ServiceBusMessenger and NamedInstanceFactory{ServiceBusMessenger} configured.</returns>
         public static IServiceCollection AddServiceBusSingleton(this IServiceCollection services, ConnectionConfig config)
         {
             return AddNamedInstance<ServiceBusMessenger>(services, null, new ServiceBusMessenger(config));
@@ -183,7 +183,7 @@
         /// </summary>
         /// <param name="services">Service collection to extend.</param>
         /// <param name="config">The configuration.</param>
-        /// <returns>Modified service collection with the ServiceBusMessenger and NamedInstanceFactory{T} configured.</returns>
+        /// <returns>Modified service collection with the ServiceBusMessenger and NamedInstanceFactory{ServiceBusMessenger} configured.</returns>
         public static IServiceCollection AddServiceBusSingleton(this IServiceCollection services, ServicePrincipleConfig config)
         {
             return AddNamedInstance<ServiceBusMessenger>(services, null, new ServiceBusMessenger(config));
