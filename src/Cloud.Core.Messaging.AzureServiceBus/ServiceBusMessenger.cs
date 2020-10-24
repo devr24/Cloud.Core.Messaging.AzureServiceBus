@@ -248,7 +248,7 @@
         /// <exception cref="InvalidOperationException">Callback for this message type already configured. Only one callback per type is supported.</exception>
         public void Receive<T>(Action<T> successCallback, Action<Exception> errorCallback, int batchSize = 10) where T : class
         {
-            System.Threading.Monitor.Enter(ReceiveGate);
+            Monitor.Enter(ReceiveGate);
 
             try
             {
@@ -268,7 +268,7 @@
             }
             finally
             {
-                System.Threading.Monitor.Exit(ReceiveGate);
+                Monitor.Exit(ReceiveGate);
             }
         }
 
@@ -326,7 +326,7 @@
         /// <typeparam name="T">Type of object on the entity.</typeparam>
         /// <param name="batchSize">Size of the batch.</param>
         /// <returns>IMessageItem&lt;T&gt;.</returns>
-        public async Task<List<T>> ReceiveBatch<T>(int batchSize) where T : class
+        public async Task<IEnumerable<T>> ReceiveBatch<T>(int batchSize) where T : class
         {
             var messages = await ReceiveBatchEntity<T>(batchSize);
             return messages?.Select(m => m.Body).ToList();
@@ -338,7 +338,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="batchSize">Size of the batch.</param>
         /// <returns>IMessageEntity&lt;T&gt;.</returns>
-        public async Task<List<IMessageEntity<T>>> ReceiveBatchEntity<T>(int batchSize) where T : class
+        public async Task<IEnumerable<IMessageEntity<T>>> ReceiveBatchEntity<T>(int batchSize) where T : class
         {
             // Setup the queue adapter if it doesn't exist.
             if (!QueueConnectors.ContainsKey(typeof(T)))

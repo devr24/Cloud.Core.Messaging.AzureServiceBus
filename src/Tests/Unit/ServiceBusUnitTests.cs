@@ -81,6 +81,37 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             serviceCollection.ContainsService(typeof(NamedInstanceFactory<IReactiveMessenger>)).Should().BeTrue();
             serviceCollection.Clear();
 
+            serviceCollection.AddServiceBusSingleton<IMessenger>("test", "test", "test");
+            serviceCollection.ContainsService(typeof(IMessenger)).Should().BeTrue();
+            serviceCollection.ContainsService(typeof(NamedInstanceFactory<IMessenger>)).Should().BeTrue();
+            serviceCollection.Clear();
+
+            serviceCollection.AddServiceBusSingleton("test", "test", "test");
+            serviceCollection.ContainsService(typeof(ServiceBusMessenger)).Should().BeTrue();
+            serviceCollection.ContainsService(typeof(NamedInstanceFactory<ServiceBusMessenger>)).Should().BeTrue();
+            serviceCollection.Clear();
+
+            serviceCollection.AddServiceBusSingleton<IMessenger>(new MsiConfig { TenantId = "test", SubscriptionId = "test", InstanceName = "test" });
+            serviceCollection.ContainsService(typeof(IMessenger)).Should().BeTrue();
+            serviceCollection.ContainsService(typeof(NamedInstanceFactory<IMessenger>)).Should().BeTrue();
+            serviceCollection.Clear();
+
+            serviceCollection.AddServiceBusSingleton(new MsiConfig { TenantId = "test", SubscriptionId = "test", InstanceName = "test" });
+            serviceCollection.ContainsService(typeof(ServiceBusMessenger)).Should().BeTrue();
+            serviceCollection.ContainsService(typeof(NamedInstanceFactory<ServiceBusMessenger>)).Should().BeTrue();
+            serviceCollection.Clear();
+
+            serviceCollection.AddServiceBusSingleton(new ConnectionConfig { ConnectionString = "test" });
+            serviceCollection.ContainsService(typeof(ServiceBusMessenger)).Should().BeTrue();
+            serviceCollection.ContainsService(typeof(NamedInstanceFactory<ServiceBusMessenger>)).Should().BeTrue();
+            serviceCollection.Clear();
+
+            serviceCollection.AddServiceBusSingleton(new ServicePrincipleConfig { TenantId = "test", SubscriptionId = "test", AppId = "test", AppSecret = "test", InstanceName = "test"});
+            serviceCollection.ContainsService(typeof(ServiceBusMessenger)).Should().BeTrue();
+            serviceCollection.ContainsService(typeof(NamedInstanceFactory<ServiceBusMessenger>)).Should().BeTrue();
+            serviceCollection.Clear();
+
+            serviceCollection.AddServiceBusSingletonNamed("key0", "test", "test", "test");
             serviceCollection.AddServiceBusSingletonNamed<IMessenger>("key1", "test", "test", "test");
             serviceCollection.AddServiceBusSingletonNamed<IMessenger>("key2", "test", "test", "test");
             serviceCollection.AddServiceBusSingletonNamed<IReactiveMessenger>("key3", "test", "test", "test");
@@ -90,12 +121,16 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Unit
             serviceCollection.AddServiceBusSingletonNamed<IMessenger>("key5", new ConnectionConfig() { ConnectionString = "test" });
             serviceCollection.AddServiceBusSingletonNamed<IReactiveMessenger>("key6", new ConnectionConfig() { ConnectionString = "test" });
             serviceCollection.ContainsService(typeof(IReactiveMessenger)).Should().BeTrue();
+            serviceCollection.ContainsService(typeof(ServiceBusMessenger)).Should().BeTrue();
             serviceCollection.ContainsService(typeof(IMessenger)).Should().BeTrue();
             serviceCollection.ContainsService(typeof(NamedInstanceFactory<IReactiveMessenger>)).Should().BeTrue();
             serviceCollection.ContainsService(typeof(NamedInstanceFactory<IMessenger>)).Should().BeTrue();
+            serviceCollection.ContainsService(typeof(NamedInstanceFactory<ServiceBusMessenger>)).Should().BeTrue();
 
+            var resolvedFactory0 = serviceCollection.BuildServiceProvider().GetService<NamedInstanceFactory<ServiceBusMessenger>>();
             var resolvedFactory1 = serviceCollection.BuildServiceProvider().GetService<NamedInstanceFactory<IReactiveMessenger>>();
             var resolvedFactory2 = serviceCollection.BuildServiceProvider().GetService<NamedInstanceFactory<IMessenger>>();
+            resolvedFactory0["key0"].Should().NotBeNull();
             resolvedFactory1["key3"].Should().NotBeNull();
             resolvedFactory1["key4"].Should().NotBeNull();
             resolvedFactory1["test2"].Should().NotBeNull();
