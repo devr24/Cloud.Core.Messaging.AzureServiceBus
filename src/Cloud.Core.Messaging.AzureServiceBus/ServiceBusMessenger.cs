@@ -484,7 +484,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="message">The message.</param>
         /// <returns>Task.</returns>
-        public async Task Defer<T>(T message) where T : class
+        public virtual async Task Defer<T>(T message) where T : class
         {
             await GetQueueAdapterIfExists<T>().Defer(message).ConfigureAwait(false);
         }
@@ -496,7 +496,7 @@
         /// <param name="message">The message.</param>
         /// <param name="propertiesToModify"></param>
         /// <returns>Task.</returns>
-        public async Task Defer<T>(T message, KeyValuePair<string, object>[] propertiesToModify) where T : class
+        public virtual async Task Defer<T>(T message, KeyValuePair<string, object>[] propertiesToModify) where T : class
         {
             await GetQueueAdapterIfExists<T>().Defer(message, propertiesToModify).ConfigureAwait(false);
         }
@@ -507,7 +507,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="sequenceNumbers">List of message identities to lookup.</param>
         /// <returns>List of deferred messages.</returns>
-        public async Task<List<T>> ReceiveDeferredBatch<T>(IEnumerable<long> sequenceNumbers) where T : class
+        public virtual async Task<List<T>> ReceiveDeferredBatch<T>(IEnumerable<long> sequenceNumbers) where T : class
         {
             // Setup the queue adapter if it doesn't exist.
             if (!QueueConnectors.ContainsKey(typeof(T)))
@@ -529,7 +529,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="sequenceNumbers">List of message identities to lookup.</param>
         /// <returns>List of deferred messages.</returns>
-        public async Task<List<IMessageEntity<T>>> ReceiveDeferredBatchEntity<T>(IEnumerable<long> sequenceNumbers) where T : class
+        public virtual async Task<List<IMessageEntity<T>>> ReceiveDeferredBatchEntity<T>(IEnumerable<long> sequenceNumbers) where T : class
         {
             // Setup the queue adapter if it doesn't exist.
             if (!QueueConnectors.ContainsKey(typeof(T)))
