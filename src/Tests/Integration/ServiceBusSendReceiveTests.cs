@@ -294,7 +294,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             var batchSize = 10;
             var messageCount = 55;
             var queueMessenger = GetQueueMessenger("batchEntityQueueMessenger");
-            CreateStringTestMessages(queueMessenger, messageCount+10).GetAwaiter().GetResult();
+            CreateStringTestMessages(queueMessenger, messageCount).GetAwaiter().GetResult();
 
             // Act - Send the message to initiate receive.
             Thread.Sleep(2000);
@@ -308,7 +308,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                     queueMessenger.Complete(msg).GetAwaiter().GetResult();
                 }
 
-                loopCounter+= batchSize;
+                loopCounter+= messages.Count();
             } while (loopCounter < messageCount);
 
             Console.WriteLine($"Messages processed {loopCounter}");
@@ -324,7 +324,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
             var batchSize = 100;
             var messageCount = 500;
             var queueMessenger = GetQueueMessenger("batchQueueMessenger");
-            CreateStringTestMessages(queueMessenger, messageCount+10).GetAwaiter().GetResult();
+            CreateStringTestMessages(queueMessenger, messageCount).GetAwaiter().GetResult();
 
             // Act - Send the message to initiate receive.
             Thread.Sleep(2000);
@@ -337,7 +337,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                 
                 queueMessenger.CompleteAll(messages.Select(m => m.Body)).GetAwaiter().GetResult();
                 
-                loopCounter += batchSize;
+                loopCounter += messages.Count();
             } while (loopCounter < messageCount);
 
             Console.WriteLine($"Messages processed {loopCounter}");

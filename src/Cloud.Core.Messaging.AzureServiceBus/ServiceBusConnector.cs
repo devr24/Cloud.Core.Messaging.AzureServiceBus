@@ -35,8 +35,6 @@
         internal readonly ConcurrentDictionary<T, Timer> LockTimers = new ConcurrentDictionary<T, Timer>(ObjectReferenceEqualityComparer<T>.Default);
         internal readonly IObserver<T> MessageIn;
         internal Timer ReadTimer;
-
-        private bool _batchInProcess;
         internal const long HeaderSizeEstimate = 54; // start with the smallest header possible
 
         private readonly object _objLock = new object();
@@ -76,7 +74,7 @@
                 {
                     // Only process a single message batch at any one time.  
                     // Also, don't process during back-off periods.
-                    if (_batchInProcess || ShouldBackOff())
+                    if (Messages.Any() || ShouldBackOff())
                         return;
 
                     Read(_, readBatchSize);
@@ -305,8 +303,8 @@
             // the receiver is in an error state and we fix this by re-instantiating the receiver.  Only check count after the 5 seconds idle buffer.
             // StackOverflow article: https://stackoverflow.com/questions/53853306/renewlock-error-using-servicebus-subscriptionclient?noredirect=1#comment94574818_53853306
             if ((instantCheck && Messages.IsEmpty) ||
-                // 60 seconds renewal backoff
-                (ReceiverSleepTime.Elapsed.TotalSeconds > 60
+                // Renewal backoff
+                (ReceiverSleepTime.Elapsed.TotalSeconds > 30
                 // Finally, only renew client IF we aren't actively processing any messages at the 
                 // moment (renewal of new client will break current messages completing/erroring etc).
                 && Messages.IsEmpty))
@@ -339,14 +337,13 @@
             {
                 // If already processing, return from read 
                 // (shouldn't happen, but in for a safeguard).
-                if (_batchInProcess)
+                if (Messages.Any())
                     return;
 
                 if (Receiver == null)
                     throw new InvalidOperationException("Receiver Entity has not been configured");
 
                 // Set batch "in processing" by setting flag and stopping read timer.
-                _batchInProcess = true;
                 StopReading();
 
                 try
@@ -408,7 +405,6 @@
                     if (!Disposed)
                     {
                         // Set batch processing to finished and restart the read timer.
-                        _batchInProcess = false;
                         StartReading(readBatchSize);
                     }
                 }
@@ -435,7 +431,7 @@
                     Receiver.PrefetchCount = 100;
 
                     // Get a single message from the receiver entity.
-                    var messages = await Receiver.ReceiveAsync(1, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+                    var messages = await Receiver.ReceiveAsync(100, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
                     if (messages == null)
                     {
@@ -482,14 +478,12 @@
             var typedMessages = new List<IMessageEntity<T>>();
             try
             {
-
-                Receiver = new MessageReceiver(Config.ConnectionString, Config.ReceiverInfo.ReceiverFullPath, ReceiveMode.PeekLock,
-                    new RetryExponential(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(500), 3))
-                {
-                    PrefetchCount = 0
-                };
                 var maxTimeout = new Stopwatch();
                 maxTimeout.Start();
+                const int timeout = 60;
+                const double checkTime = (int)(((decimal)timeout / 100) * 10);
+
+                bool continueLoop = true;
 
                 do
                 {
@@ -519,7 +513,30 @@
                             }
                         }
                     }
-                } while (typedMessages.Count < batchSize && maxTimeout.Elapsed.TotalSeconds < 60);
+                    else
+                        BrokenReceiverCheck(); // Make sure the receiver is working as expected.
+
+                    // Only continue polling for messages (and filling the batch) if...
+                    // We've not yet met the batch size.
+                    if (typedMessages.Count >= batchSize)
+                    {
+                        continueLoop = false;
+                    }
+                    // The number of messages we've collected is the total on the queue/topic.
+                    else if (maxTimeout.Elapsed.TotalSeconds > checkTime && maxTimeout.Elapsed.TotalSeconds < timeout)
+                    {
+                        if (typedMessages.Count == GetReceiverMessageCount().GetAwaiter().GetResult().ActiveEntityCount)
+                        {
+                            continueLoop = false;
+                        }
+                    }
+                    // The total timeout has elapsed.
+                    else if (maxTimeout.Elapsed.TotalSeconds >= timeout)
+                    {
+                        continueLoop = false;
+                    }
+
+                } while (continueLoop);
             }
             catch (InvalidOperationException iex)
             {
