@@ -143,7 +143,7 @@
                     if (bytesAfterCurrent > Config.SenderInfo.MaxMessageBatchSizeBytes ||
                         batchMsgCount >= sendBatchSize)
                     {
-                        await Sender.SendAsync(currentMsgBatch).ConfigureAwait(false);
+                        await Sender.SendAsync(currentMsgBatch);
 
                         // Increment total number of messages sent and then reset all other counters.
                         totalMsgsSent += batchMsgCount;
@@ -1077,7 +1077,7 @@
 
                 Sender = new MessageSender(Config.ConnectionString,
                     Config.SenderInfo.EntityName,
-                    new RetryExponential(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(500), 3));
+                    new RetryExponential(TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(800), 3));
             }
         }
 
@@ -1096,7 +1096,7 @@
 
                 Receiver = new MessageReceiver(Config.ConnectionString,
                     Config.ReceiverInfo.ReceiverFullPath, ReceiveMode.PeekLock,
-                    new RetryExponential(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(500), 3));
+                    new RetryExponential(TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(800), 3));
             }
         }
 
