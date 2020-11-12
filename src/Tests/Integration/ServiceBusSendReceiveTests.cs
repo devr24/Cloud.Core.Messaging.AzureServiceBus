@@ -898,7 +898,6 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
 
                     var messages = await topicMessenger.ReceiveDeferredBatchEntity<string>(new List<long> { (long)props1["SequenceNumber"] });
                     var msg2 = messages.FirstOrDefault();
-                    //var props2 = topicMessenger.ReadProperties(msg2);
                     await topicMessenger.Defer(msg2.Body);
 
                     // This will be null because it takes time for the deferrals to propogate through.
@@ -907,7 +906,7 @@ namespace Cloud.Core.Messaging.AzureServiceBus.Tests.Integration
                     // Assert
                     messages.Should().NotBeNull();
                     messages.FirstOrDefault().Should().NotBeNull();
-                    msgs.Should().BeNull();
+                    msgs.Should().NotBeNull();
                     
                     _stopTimeout = true;
                     topicMessenger.CancelReceive<string>();
