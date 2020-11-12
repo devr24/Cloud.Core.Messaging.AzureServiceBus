@@ -155,7 +155,7 @@
         /// <typeparam name="T">Type of object on the entity.</typeparam>
         /// <param name="message">The message body to be sent.</param>
         /// <returns>Task.</returns>
-        public async Task Send<T>(T message) where T : class
+        public virtual async Task Send<T>(T message) where T : class
         {
             await Send(message, null);
         }
@@ -167,7 +167,7 @@
         /// <param name="message">The message body to be sent.</param>
         /// <param name="properties">The properties of the message.</param>
         /// <returns>Task.</returns>
-        public async Task Send<T>(T message, KeyValuePair<string, object>[] properties) where T : class
+        public virtual async Task Send<T>(T message, KeyValuePair<string, object>[] properties) where T : class
         {
             if (!QueueConnectors.ContainsKey((typeof(T))))
             {
@@ -185,7 +185,7 @@
         /// <param name="messages">List of messages to send.</param>
         /// <param name="batchSize">Size of message batches to send in a single call. If set to zero, uses the default batch size from config.</param>
         /// <returns>Task.</returns>
-        public async Task SendBatch<T>(IEnumerable<T> messages, int batchSize = 100) where T : class
+        public virtual async Task SendBatch<T>(IEnumerable<T> messages, int batchSize = 100) where T : class
         {
             KeyValuePair<string, object>[] placeholder = null;
 
@@ -202,7 +202,7 @@
         /// <param name="properties">The properties applied to all messages</param>
         /// <param name="batchSize">Size of message batches to send in a single call. If set to zero, uses the default batch size from config.</param>
         /// <returns>Task.</returns>
-        public async Task SendBatch<T>(IEnumerable<T> messages, KeyValuePair<string, object>[] properties, int batchSize = 100) where T : class
+        public virtual async Task SendBatch<T>(IEnumerable<T> messages, KeyValuePair<string, object>[] properties, int batchSize = 100) where T : class
         {
             // Setup the queue adapter if it doesn't exist.
             if (!QueueConnectors.ContainsKey(typeof(T)))
@@ -224,7 +224,7 @@
         /// <param name="setProps">Function for setting properties for each message.</param>
         /// <param name="batchSize">Size of message batches to send in a single call. If set to zero, uses the default batch size from config.</param>
         /// <returns>Task.</returns>
-        public async Task SendBatch<T>(IEnumerable<T> messages, Func<T, KeyValuePair<string, object>[]> setProps, int batchSize = 100) where T : class
+        public virtual async Task SendBatch<T>(IEnumerable<T> messages, Func<T, KeyValuePair<string, object>[]> setProps, int batchSize = 100) where T : class
         {
             // Setup the queue adapter if it doesn't exist.
             if (!QueueConnectors.ContainsKey(typeof(T)))
@@ -246,7 +246,7 @@
         /// <param name="errorCallback">Callback to execute after an error occurs.</param>
         /// <param name="batchSize">Size of message batches to receive in a single call. If set to zero, uses the default batch size from config.</param>
         /// <exception cref="InvalidOperationException">Callback for this message type already configured. Only one callback per type is supported.</exception>
-        public void Receive<T>(Action<T> successCallback, Action<Exception> errorCallback, int batchSize = 10) where T : class
+        public virtual void Receive<T>(Action<T> successCallback, Action<Exception> errorCallback, int batchSize = 10) where T : class
         {
             Monitor.Enter(ReceiveGate);
 
@@ -296,7 +296,7 @@
         /// </summary>
         /// <typeparam name="T">Type of object on the entity.</typeparam>
         /// <returns>IMessageItem&lt;T&gt;.</returns>
-        public T ReceiveOne<T>() where T : class
+        public virtual T ReceiveOne<T>() where T : class
         {
             return ReceiveOneEntity<T>()?.Body;
         }
@@ -306,7 +306,7 @@
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns>IMessageEntity&lt;T&gt;.</returns>
-        public IMessageEntity<T> ReceiveOneEntity<T>() where T : class
+        public virtual IMessageEntity<T> ReceiveOneEntity<T>() where T : class
         {
             // Setup the queue adapter if it doesn't exist.
             if (!QueueConnectors.ContainsKey(typeof(T)))
@@ -326,7 +326,7 @@
         /// <typeparam name="T">Type of object on the entity.</typeparam>
         /// <param name="batchSize">Size of the batch.</param>
         /// <returns>IMessageItem&lt;T&gt;.</returns>
-        public async Task<IEnumerable<T>> ReceiveBatch<T>(int batchSize) where T : class
+        public virtual async Task<IEnumerable<T>> ReceiveBatch<T>(int batchSize) where T : class
         {
             var messages = await ReceiveBatchEntity<T>(batchSize);
             return messages?.Select(m => m.Body).ToList();
@@ -338,7 +338,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="batchSize">Size of the batch.</param>
         /// <returns>IMessageEntity&lt;T&gt;.</returns>
-        public async Task<IEnumerable<IMessageEntity<T>>> ReceiveBatchEntity<T>(int batchSize) where T : class
+        public virtual async Task<IEnumerable<IMessageEntity<T>>> ReceiveBatchEntity<T>(int batchSize) where T : class
         {
             // Setup the queue adapter if it doesn't exist.
             if (!QueueConnectors.ContainsKey(typeof(T)))
@@ -375,7 +375,7 @@
         /// <typeparam name="T">Type of message body.</typeparam>
         /// <param name="msg">Message body, used to identify actual Service Bus message.</param>
         /// <returns>IDictionary&lt;System.String, System.Object&gt;.</returns>
-        public IDictionary<string, object> ReadProperties<T>(T msg) where T : class
+        public virtual IDictionary<string, object> ReadProperties<T>(T msg) where T : class
         {
             if (!QueueConnectors.ContainsKey(typeof(T)))
             {
@@ -406,7 +406,7 @@
         /// Cancels the receive of messages.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        public void CancelReceive<T>() where T : class
+        public virtual void CancelReceive<T>() where T : class
         {
             Monitor.Enter(CancelGate);
 
@@ -439,7 +439,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="message">The message.</param>
         /// <returns>Task.</returns>
-        public async Task Complete<T>(T message) where T : class
+        public virtual async Task Complete<T>(T message) where T : class
         {
             await GetQueueAdapterIfExists<T>().Complete(message).ConfigureAwait(false);
         }
@@ -450,7 +450,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="messages">The list of messages.</param>
         /// <returns>Task.</returns>
-        public async Task CompleteAll<T>(IEnumerable<T> messages) where T : class
+        public virtual async Task CompleteAll<T>(IEnumerable<T> messages) where T : class
         {
             await GetQueueAdapterIfExists<T>().Complete(messages).ConfigureAwait(false);
         }
@@ -461,7 +461,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="message">The message.</param>
         /// <returns>Task.</returns>
-        public async Task Abandon<T>(T message) where T : class
+        public virtual async Task Abandon<T>(T message) where T : class
         {
             await GetQueueAdapterIfExists<T>().Abandon(message).ConfigureAwait(false);
         }
@@ -473,7 +473,7 @@
         /// <param name="message">The message.</param>
         /// <param name="propertiesToModify"></param>
         /// <returns>Task.</returns>
-        public async Task Abandon<T>(T message, KeyValuePair<string, object>[] propertiesToModify) where T : class
+        public virtual async Task Abandon<T>(T message, KeyValuePair<string, object>[] propertiesToModify) where T : class
         {
             await GetQueueAdapterIfExists<T>().Abandon(message, propertiesToModify).ConfigureAwait(false);
         }
