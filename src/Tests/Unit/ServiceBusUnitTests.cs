@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reactive.Subjects;
+using Cloud.Core.Extensions;
 using Cloud.Core.Messaging.AzureServiceBus.Config;
 using Cloud.Core.Messaging.AzureServiceBus.Models;
 using Cloud.Core.Testing;

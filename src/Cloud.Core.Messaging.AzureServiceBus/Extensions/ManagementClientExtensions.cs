@@ -353,7 +353,7 @@
                 // Then recreate it.
                 manager.CreateQueueIfNotExists(queueName);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 try
                 {
@@ -431,7 +431,7 @@
                 }
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 try
                 {
@@ -445,7 +445,7 @@
                 }
                 catch (Exception)
                 {
-                    throw ex;
+                    throw;
                 }
             }
         }
