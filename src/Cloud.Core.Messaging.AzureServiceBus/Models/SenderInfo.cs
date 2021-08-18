@@ -2,7 +2,8 @@
 {
     using System;
     using System.Text;
-    
+    using Cloud.Core.Extensions;
+
     /// <summary>
     /// Sender setup information, used when creating a connection to send messages to an entity.
     /// </summary>

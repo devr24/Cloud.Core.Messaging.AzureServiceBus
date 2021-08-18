@@ -20,6 +20,7 @@
     using Comparer;
     using System.Diagnostics.CodeAnalysis;
     using Extensions;
+    using Cloud.Core.Extensions;
 
     /// <summary>
     /// Generics based message queue router from <see cref="IObservable{T}" /> through to the <see cref="QueueClient" />.

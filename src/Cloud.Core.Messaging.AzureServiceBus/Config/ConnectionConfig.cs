@@ -2,6 +2,7 @@
 {
     using System;
     using System.Linq;
+    using Cloud.Core.Extensions;
 
     /// <summary>
     /// Connection string configuration for connecting to an instance of Service Bus.

@@ -10,6 +10,7 @@
     using System.Reactive.Subjects;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cloud.Core.Extensions;
     using Config;
     using Core;
     using Microsoft.Azure.Management.Fluent;

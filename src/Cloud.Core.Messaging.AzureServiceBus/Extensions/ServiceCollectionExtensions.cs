@@ -2,6 +2,7 @@
 {
     using System;
     using Cloud.Core;
+    using Cloud.Core.Extensions;
     using Cloud.Core.Messaging.AzureServiceBus;
     using Cloud.Core.Messaging.AzureServiceBus.Config;
     using Cloud.Core.Messaging.AzureServiceBus.Models;

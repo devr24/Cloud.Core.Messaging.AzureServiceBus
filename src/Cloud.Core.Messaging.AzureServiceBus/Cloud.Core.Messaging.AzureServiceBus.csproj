@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Company>Aylesbury Solutions Ltd</Company>
-    <Version>3.1</Version>
+    <Version>5.0</Version>
     <Authors>Robert McCabe</Authors>
     <PackageIconUrl>https://cloud1core.blob.core.windows.net/icons/CC.png</PackageIconUrl>
     <Copyright>Aylesbury Solutions Ltd</Copyright>
@@ -25,12 +25,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cloud.Core" Version="3.1.3704.999" />
-    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.33.0" />
-    <PackageReference Include="Microsoft.Azure.ServiceBus" Version="4.1.3" />
-    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.8" />
-    <PackageReference Include="System.Reactive.Core" Version="4.4.1" />
-    <PackageReference Include="System.Reactive.Linq" Version="4.4.1" />
+    <PackageReference Include="Cloud.Core" Version="5.0.3636.1049" />
+    <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.37.1" />
+    <PackageReference Include="Microsoft.Azure.ServiceBus" Version="5.1.3" />
+    <PackageReference Include="System.Reactive.Core" Version="5.0.0" />
+    <PackageReference Include="System.Reactive.Linq" Version="5.0.0" />
   </ItemGroup>
 
 </Project>

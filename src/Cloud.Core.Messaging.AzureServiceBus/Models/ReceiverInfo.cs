@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Globalization;
     using System.Text;
+    using Cloud.Core.Extensions;
 
     /// <summary>
     /// Receiver setup information, used when creating a connection to listen to messages from an entity.

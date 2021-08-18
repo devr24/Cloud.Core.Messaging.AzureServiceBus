@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Text;
     using System.Threading.Tasks;
+    using Cloud.Core.Extensions;
     using Config;
     using Core;
     using Microsoft.Azure.ServiceBus.Management;

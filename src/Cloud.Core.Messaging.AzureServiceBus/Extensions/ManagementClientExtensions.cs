@@ -5,6 +5,7 @@
     using System.Linq;
     using System.Threading.Tasks;
     using Cloud.Core;
+    using Cloud.Core.Extensions;
     using Cloud.Core.Messaging.AzureServiceBus.Models;
 
     /// <summary>
@@ -366,7 +367,7 @@
                 }
                 catch (Exception)
                 {
-                    throw ex;
+                    throw;
                 }
             }
         }

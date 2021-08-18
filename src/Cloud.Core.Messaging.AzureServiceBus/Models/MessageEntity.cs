@@ -1,6 +1,7 @@
 ﻿namespace Cloud.Core.Messaging.AzureServiceBus.Models
 {
     using System.Collections.Generic;
+    using Cloud.Core.Extensions;
 
     /// <summary>
     /// Class MessageEntity.

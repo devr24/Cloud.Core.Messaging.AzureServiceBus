@@ -1,6 +1,7 @@
 ﻿namespace Cloud.Core.Messaging.AzureServiceBus.Config
 {
     using System;
+    using Cloud.Core.Extensions;
 
     /// <summary>
     /// Service Principle configuration used to connect to an instance of ServiceBus.

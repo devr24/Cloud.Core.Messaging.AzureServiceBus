@@ -1,6 +1,7 @@
 ﻿namespace Cloud.Core.Messaging.AzureServiceBus.Config
 {
     using System;
+    using Cloud.Core.Extensions;
 
     /// <summary>
     /// Managed Service Instance OR Managed User Instance config for connecting to an instance of Service Bus.
